@@ -1,3 +1,18 @@
+# per Delano
+
+# The following are the metrics we use from the exported files:
+# cpu.usage.average
+# mem.consumed.average
+# disk.used.latest
+# disk.read.average
+# disk.write.average
+# net.received.average
+# net.transmitted.average
+#
+# Notes
+# When supplying disk.used.latest, the Instance should be set to DISKFILE
+
+
 import psutil
 import urllib2
 #import platform
