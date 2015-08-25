@@ -5,32 +5,32 @@ name = new infra 01
 [machine]
 id = 0
 config = {
-	    "cpu_count": 8, 
-	    "cpu_speed_mhz": 21600000000, 
+	    "cpu_count": 4,
+	    "cpu_speed_mhz": 12436000000,
 	    "disks": [
 	        {
-	            "maximum_size_bytes": 498768031744, 
-	            "name": "/dev/disk0s2", 
+	            "maximum_size_bytes": 500000878592,
+	            "name": "C:\\",
 	            "type": "DISK"
 	        }
-	    ], 
-	    "maximum_memory_bytes": 17179869184, 
-	    "name": "server_54d50bff-1721-402b-9263-036ca7855374", 
+	    ],
+	    "maximum_memory_bytes": 17137737728,
+	    "name": "server_2d917812-5b12-4f6f-8d6b-3e260b963496",
 	    "nics": [
 	        {
-	            "kind": 0, 
-	            "link": "10.71.1.21", 
-	            "mac_address": "aa:aa:aa:aa:aa:aa", 
-	            "name": "en0"
-	        }, 
+	            "kind": 0,
+	            "link": "169.254.176.18",
+	            "mac_address": "aa:aa:aa:aa:aa:aa",
+	            "name": "{2FFB5ECE-19EF-45F0-9952-C97642DD91C6}"
+	        },
 	        {
-	            "kind": 0, 
-	            "link": "10.71.1.20", 
-	            "mac_address": "aa:aa:aa:aa:aa:aa", 
-	            "name": "en17"
+	            "kind": 0,
+	            "link": "10.71.1.8",
+	            "mac_address": "aa:aa:aa:aa:aa:aa",
+	            "name": "{39554153-458F-4F7E-83ED-9163866376A8}"
 	        }
-	    ], 
-	    "status": "poweredOn", 
-	    "virtual_name": "server_54d50bff-1721-402b-9263-036ca7855374"
+	    ],
+	    "status": "poweredOn",
+	    "virtual_name": "server_2d917812-5b12-4f6f-8d6b-3e260b963496"
 	}
 

@@ -61,10 +61,14 @@ class machine(object):
         self.disk_info = []
         disks = psutil.disk_partitions()
         for disk in disks:
-            total_disk_size = psutil.disk_usage(disk[1])[0]
-            self.disk_info.append({"name": disk[0],
-                                   "maximum_size_bytes": total_disk_size,
-                                   "type": "DISK"})
+            if not disk.fstype:
+                continue
+                i = 1
+            else:
+                total_disk_size = psutil.disk_usage(disk[1])[0]
+                self.disk_info.append({"name": disk[0],
+                                       "maximum_size_bytes": total_disk_size,
+                                       "type": "DISK"})
 
         i = 1
 
