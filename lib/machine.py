@@ -9,11 +9,23 @@ headers = {'content-type': 'application/json'}
 oauth_token = "30a62bf3a34104c882eaa47655e99fa6b81ea1fd3428fa5f5e43b74b4b0a7729"
 
 class machine(object):
-    def __init__(self):
-        self.create_machine_uri = ""
+    def __init__(self, org_id=4196, infra_id=523):
+        self.org_id = org_id
+        self.infra_id = infra_id
 
-    def machine_exist(self, id):
-        return 0
+    def machine_exist(self, machine_id):
+
+        URI = "https://console.6fusion.com:443/api/v2"
+        URI += "/organizations/%s/infrastructures/%s/machines/%s.json" % (self.org_id, self.infra_id, machine_id)
+        URI += "?access_token=%s" % oauth_token
+
+        req = requests.get(URI)
+
+        if req.status_code == 200:
+            return True
+
+        else:
+            self.create_machine()
 
     def get_mem(self):
         mem_info = psutil.virtual_memory()
@@ -50,13 +62,19 @@ class machine(object):
         disks = psutil.disk_partitions()
         for disk in disks:
             total_disk_size = psutil.disk_usage(disk[1])[0]
-            self.disk_info.append({"device": disk[0],
+            self.disk_info.append({"name": disk[0],
                                    "maximum_size_bytes": total_disk_size,
                                    "type": "DISK"})
 
         i = 1
 
     def create_machine(self):
+
+        self.get_cpu_info()
+        self.get_mem()
+        self.get_nics()
+        self.get_disks()
+
         server = "server_" + str(uuid.uuid4())
 
         machine_details = {
@@ -70,19 +88,33 @@ class machine(object):
             "nics": self.nics
         }
 
-        print machine_details
+        self.json_details = json.dumps(machine_details, sort_keys=True, indent=4)
 
-        i = 1
+        return self.post_machine()
+
+    def post_machine(self):
+
+        URI = "https://api.6fusion.com:443/api/v2/"
+        URI += "organizations/%s/infrastructures/%s/machines.json?access_token=%s" % (self.org_id,
+                                                                                      self.infra_id,
+                                                                                      oauth_token)
+
+        try:
+            machine_post = requests.post(URI, data=self.json_details, headers=headers)
+            req_info = json.loads(machine_post.text)
+            machine_number = req_info['remote_id']
+            print machine_number
+            return machine_number
+
+        except Exception as e:
+            print('ERROR: ' + str(e))
+            raise Exception('Infrastructure creation failed.  Halting execution')
 
 
 def main():
     machineInfo = machine()
-    machineInfo.get_cpu_info()
-    machineInfo.get_mem()
-    machineInfo.get_nics()
-    machineInfo.get_disks()
 
-    machineInfo.create_machine()
+    machineInfo.machine_exist(machine_id='')
 
     i = 1
 

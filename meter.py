@@ -27,7 +27,7 @@ def main():
     cfg_machine_id = parser.get('machine', 'id')
 
     inf = infrastructure()
-    node = machine()
+
 
     if cfg_infr_id=="0":
         infr_id = inf.create_infr(cfg_infr_name)
@@ -39,7 +39,8 @@ def main():
         infr_id = cfg_infr_id
 
     if cfg_machine_id=="0":
-        machine_id = node.create_machine(inf.org_id, infr_id)
+        node = machine(inf.org_id, infr_id)
+        machine_id = node.create_machine()
         parser.set('machine', 'id', str(machine_id))
         cfgfile = open("cfg/config.info",'w')
         parser.write(cfgfile)
