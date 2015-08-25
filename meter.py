@@ -12,35 +12,48 @@
 # Notes
 # When supplying disk.used.latest, the Instance should be set to DISKFILE
 
-
 from lib.readings import readings
 from lib.machine import machine
 from lib.infrastructure import infrastructure
+from ConfigParser import SafeConfigParser
 # import platform
 # import cpu-info
 
 def main():
+    parser = SafeConfigParser()
+    parser.read('cfg/config.info')
+    cfg_infr_name = parser.get('infrastructure','name')
+    cfg_infr_id = parser.get('infrastructure', 'id')
+    cfg_machine_id = parser.get('machine', 'id')
+
     inf = infrastructure()
     node = machine()
 
-    infr_id = inf.create_infr("temp")
+    if cfg_infr_id=="0":
+        infr_id = inf.create_infr(cfg_infr_name)
+        parser.set('infrastructure','id', str(infr_id))
+    else:
+        infr_id = cfg_infr_id
 
-    machine_id = node.create_machine(inf.org_id, infr_id)
+    if cfg_machine_id=="0":
+        machine_id = node.create_machine(inf.org_id, infr_id)
+        parser.set('machine', 'id', str(machine_id))
+    else:
+        machine_id = cfg_machine_id
 
     meter = readings(machine_id, inf.org_id, infr_id)
 
     meter.gather_metrics()
+    cfgfile = open("cfg/config.info",'w')
+    parser.write(cfgfile)
+    cfgfile.close()
 
 
 if __name__ == "__main__":
     main()
 
 #TODO
-# build config file
-#   config.json (name inf)
-# read config file
 # create infrastructure
-# insert infr, and macine id back into config
 # update data points - real ones
 # get cpu, get disk, get nics
 # arrays of nics and disks
