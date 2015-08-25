@@ -51,12 +51,10 @@ def main():
 
     meter.gather_metrics()
 
-
 if __name__ == "__main__":
     main()
 
 #TODO
-# create infrastructure
 # update data points - real ones
 # get cpu, get disk, get nics
 # arrays of nics and disks

@@ -14,10 +14,8 @@ class infrastructure(object):
             URI = "https://console.6fusion.com:443/api/v2/"
             URI += "organizations/%s/infrastructures.json?" % (self.org_id)
             URI += "access_token=%s&limit=100&offset=0" % oauth_token
-
             req = requests.get(URI)
             reqInfo = json.loads(req.text)
-            i = 0
             infrastructures = reqInfo['embedded']['infrastructures']
             for inf in infrastructures:
                 if inf['name'] == infr_name:

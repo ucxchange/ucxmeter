@@ -9,8 +9,23 @@ class machine(object):
     def __init__(self):
         self.create_machine_uri = ""
 
-    def machine_exist(self, id):
-        return 0
+    # def machine_exist(self, id):
+    #         URI = "https://console.6fusion.com:443/api/v2/"
+    #         URI += "organizations/%s/infrastructures/%s/machines.json?" % (org_id, infr_id)
+    #         URI += "access_token=%s" % oauth_token
+    #         req = requests.get(URI)
+    #         reqInfo = json.loads(req.text)
+    #         machines = reqInfo['embedded']['machines']
+    #         for inf in machines:
+    #             if inf['remote_id'] == mach_name:
+    #                 infraId = infrastructures['remote_id']
+    #                 return str(infraId)
+    #         return 0
+    #         machine_data = json.dumps(machine_details, ensure_ascii=True)
+    #         machinePost = requests.post(URI, data=machine_data, headers=headers)
+    #         reqInfo = json.loads(machinePost.text)
+    #         machineInfo = reqInfo['remote_id']
+    #             return machineInfo
 
     def create_machine(self, org_id, infr_id):
         uuid = self.create_uuid_for_machine_name()
@@ -41,21 +56,21 @@ class machine(object):
             ]
         }
 
-        if self.machine_exist(uuid):
-            print("Machine exists. Moving onto add measurements/readings.")
-        else:
-            try:
-                URI = "https://console.6fusion.com:443/api/v2/"
-                URI += "organizations/%s/infrastructures/%s/machines.json?" % (org_id, infr_id)
-                URI += "access_token=%s" % oauth_token
-                machine_data = json.dumps(machine_details, ensure_ascii=True)
-                machinePost = requests.post(URI, data=machine_data, headers=headers)
-                reqInfo = json.loads(machinePost.text)
-                machineInfo = reqInfo['remote_id']
-                return machineInfo
-            except Exception as e:
-                print('ERROR: ' + str(e))
-                raise Exception('Infrastructure creation failed.  Halting execution')
+        # if uuid != 0:
+        #     print("Machine exists. Moving onto add measurements/readings.")
+        # else:
+        try:
+            URI = "https://console.6fusion.com:443/api/v2/"
+            URI += "organizations/%s/infrastructures/%s/machines.json?" % (org_id, infr_id)
+            URI += "access_token=%s" % oauth_token
+            machine_data = json.dumps(machine_details, ensure_ascii=True)
+            machinePost = requests.post(URI, data=machine_data, headers=headers)
+            reqInfo = json.loads(machinePost.text)
+            machineInfo = reqInfo['remote_id']
+            return machineInfo
+        except Exception as e:
+            print('ERROR: ' + str(e))
+            raise Exception('Infrastructure creation failed.  Halting execution')
 
     def create_uuid_for_machine_name(self):
         return "fdkjfkdjfd"  # combo of base64 for company name, "-", machine identifier - mac perhaps
