@@ -63,9 +63,8 @@ class machine(object):
             "name": "%s" % server,
             "virtual_name": server,
             "cpu_count": self.cores,
-            "cpu_speed_mhz": 3000,
-            "maximum_memory_bytes": psutil.virtual_memory().total,
-            "tags": "",
+            "cpu_speed_mhz": self.total_cpu_speed,
+            "maximum_memory_bytes": self.total_memory,
             "status": "poweredOn",
             "disks": self.disk_info,
             "nics": self.nics
