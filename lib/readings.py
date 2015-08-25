@@ -116,8 +116,6 @@ class readings(object):
             URI += "access_token=%s" % oauth_token
             reading_data = json.dumps(reading_details, ensure_ascii=True)
             readingPost = requests.post(URI, data=reading_data, headers=headers)
-            # reqInfo = json.loads(readingPost.text)
-            # readingInfo = reqInfo['uuid']
             return
         except Exception as e:
             print('ERROR: ' + str(e))

@@ -32,21 +32,24 @@ def main():
     if cfg_infr_id=="0":
         infr_id = inf.create_infr(cfg_infr_name)
         parser.set('infrastructure','id', str(infr_id))
+        cfgfile = open("cfg/config.info",'w')
+        parser.write(cfgfile)
+        cfgfile.close()
     else:
         infr_id = cfg_infr_id
 
     if cfg_machine_id=="0":
         machine_id = node.create_machine(inf.org_id, infr_id)
         parser.set('machine', 'id', str(machine_id))
+        cfgfile = open("cfg/config.info",'w')
+        parser.write(cfgfile)
+        cfgfile.close()
     else:
         machine_id = cfg_machine_id
 
     meter = readings(machine_id, inf.org_id, infr_id)
 
     meter.gather_metrics()
-    cfgfile = open("cfg/config.info",'w')
-    parser.write(cfgfile)
-    cfgfile.close()
 
 
 if __name__ == "__main__":

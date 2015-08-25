@@ -1,0 +1,7 @@
+[infrastructure]
+id = 583
+name = new infra 01
+
+[machine]
+id = 0
+

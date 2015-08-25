@@ -10,23 +10,52 @@ class infrastructure(object):
         self.infr_id = 0
 
     def check_infr_exist(self, infr_name):
-        return 0
+        try:
+            URI = "https://console.6fusion.com:443/api/v2/"
+            URI += "organizations/%s/infrastructures.json?" % (self.org_id)
+            URI += "access_token=%s&limit=100&offset=0" % oauth_token
+
+            req = requests.get(URI)
+            reqInfo = json.loads(req.text)
+            i = 0
+            infrastructures = reqInfo['embedded']['infrastructures']
+            for inf in infrastructures:
+                if inf['name'] == infr_name:
+                    infraId = infrastructures['remote_id']
+                    return str(infraId)
+            return 0
+        except Exception as e:
+            print('ERROR: ' + str(e))
+            raise Exception('Infrastructure not found. Creating...')
 
     def create_infr(self, infr_name):
-        if self.check_infr_exist(""):
+        infr_details={
+              "name": infr_name,
+              "tags": "created automatically by UCX Meter",
+              "summary": {},
+              "hosts": [
+                {}
+              ],
+              "networks": [
+                {}
+              ],
+              "volumes": [
+                {}
+              ]
+            }
+
+        if self.check_infr_exist(infr_name):
             print("Infrastructure exists. Moving onto adding machine.")
         else:
             try:
                 URI = "https://console.6fusion.com:443/api/v2/"
                 URI += "organizations/%s/infrastructures.json?" % (self.org_id)
-                URI += "access_token=%s&limit=100&offset=0" % oauth_token
-
-                req = requests.get(URI)
-                reqInfo = json.loads(req.text)
-                # machineInfo = reqInfo['embedded']['machines']
-                i = 1
-                infraId = reqInfo['embedded']['infrastructures'][0]['remote_id']
-                return str(infraId)
+                URI += "access_token=%s" % oauth_token
+                infr_data = json.dumps(infr_details, ensure_ascii=True)
+                infrPost = requests.post(URI, data=infr_data, headers=headers)
+                reqInfo = json.loads(infrPost.text)
+                infrInfo = reqInfo['remote_id']
+                return infrInfo
             except Exception as e:
                 print('ERROR: ' + str(e))
                 raise Exception('Infrastructure creation failed.  Halting execution')
