@@ -4,4 +4,33 @@ name = new infra 01
 
 [machine]
 id = 0
+config = {
+	    "cpu_count": 8, 
+	    "cpu_speed_mhz": 21600000000, 
+	    "disks": [
+	        {
+	            "maximum_size_bytes": 498768031744, 
+	            "name": "/dev/disk0s2", 
+	            "type": "DISK"
+	        }
+	    ], 
+	    "maximum_memory_bytes": 17179869184, 
+	    "name": "server_54d50bff-1721-402b-9263-036ca7855374", 
+	    "nics": [
+	        {
+	            "kind": 0, 
+	            "link": "10.71.1.21", 
+	            "mac_address": "aa:aa:aa:aa:aa:aa", 
+	            "name": "en0"
+	        }, 
+	        {
+	            "kind": 0, 
+	            "link": "10.71.1.20", 
+	            "mac_address": "aa:aa:aa:aa:aa:aa", 
+	            "name": "en17"
+	        }
+	    ], 
+	    "status": "poweredOn", 
+	    "virtual_name": "server_54d50bff-1721-402b-9263-036ca7855374"
+	}
 

@@ -40,8 +40,9 @@ def main():
 
     if cfg_machine_id=="0":
         node = machine(inf.org_id, infr_id)
-        machine_id = node.create_machine()
+        (machine_id, config) = node.create_machine()
         parser.set('machine', 'id', str(machine_id))
+        parser.set('machine', 'config', config)
         cfgfile = open("cfg/config.info",'w')
         parser.write(cfgfile)
         cfgfile.close()

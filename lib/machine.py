@@ -90,7 +90,9 @@ class machine(object):
 
         self.json_details = json.dumps(machine_details, sort_keys=True, indent=4)
 
-        return self.post_machine()
+        self.post_machine()
+
+        return (self.machine_number, self.json_details)
 
     def post_machine(self):
 
@@ -102,9 +104,7 @@ class machine(object):
         try:
             machine_post = requests.post(URI, data=self.json_details, headers=headers)
             req_info = json.loads(machine_post.text)
-            machine_number = req_info['remote_id']
-            print machine_number
-            return machine_number
+            self.machine_number = req_info['remote_id']
 
         except Exception as e:
             print('ERROR: ' + str(e))
