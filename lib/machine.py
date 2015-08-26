@@ -110,11 +110,25 @@ class machine(object):
             print('ERROR: ' + str(e))
             raise Exception('Infrastructure creation failed.  Halting execution')
 
+    def remove_machine(self, machine_id):
+
+        URI = "https://console.6fusion.com:443/api/v2"
+        URI += "/organizations/%s/infrastructures/%s/machines/%s.json" % (self.org_id, self.infra_id, machine_id)
+        URI += "?access_token=%s" % oauth_token
+
+        req = requests.delete(URI)
+        if req.status_code == 200:
+            print "Machine %s was deleted" % machine_id
+        else:
+            print "Machine %s was not deleted" % machine_id
+
 
 def main():
     machineInfo = machine()
 
-    machineInfo.machine_exist(machine_id='')
+
+
+    machineInfo.remove_machine(machine_id='381041')
 
     i = 1
 
