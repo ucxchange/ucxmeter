@@ -19,12 +19,12 @@ class infrastructure(object):
             infrastructures = reqInfo['embedded']['infrastructures']
             for inf in infrastructures:
                 if inf['name'] == infr_name:
-                    infraId = infrastructures['remote_id']
+                    infraId = inf['remote_id']
                     return str(infraId)
             return 0
         except Exception as e:
             print('ERROR: ' + str(e))
-            raise Exception('Infrastructure not found. Creating...')
+            print('Infrastructure not found. Creating...')
 
     def create_infr(self, infr_name):
         infr_details={
@@ -42,9 +42,8 @@ class infrastructure(object):
               ]
             }
 
-        if self.check_infr_exist(infr_name):
-            print("Infrastructure exists. Moving onto adding Machine.")
-        else:
+        infr_id = self.check_infr_exist(infr_name)
+        if (infr_id==0 or infr_id=="None"):
             try:
                 URI = "https://console.6fusion.com:443/api/v2/"
                 URI += "organizations/%s/infrastructures.json?" % (self.org_id)
@@ -57,3 +56,6 @@ class infrastructure(object):
             except Exception as e:
                 print('ERROR: ' + str(e))
                 raise Exception('Infrastructure creation failed.  Halting execution')
+        else:
+            print("Infrastructure exists. Moving onto adding Machine.")
+            return infr_id

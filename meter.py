@@ -16,6 +16,7 @@ from lib.readings import readings
 from lib.machine import Machine
 from lib.infrastructure import infrastructure
 from ConfigParser import SafeConfigParser
+import json
 
 def main():
     parser = SafeConfigParser()
@@ -27,7 +28,7 @@ def main():
     inf = infrastructure()
 
 
-    if cfg_infr_id=="0":
+    if (cfg_infr_id=="0" or cfg_infr_id=="None"):
         infr_id = inf.create_infr(cfg_infr_name)
         parser.set('infrastructure','id', str(infr_id))
         cfgfile = open("cfg/config.info",'w')
@@ -36,7 +37,7 @@ def main():
     else:
         infr_id = cfg_infr_id
 
-    if cfg_machine_id=="0":
+    if (cfg_machine_id=="0" or cfg_machine_id=="None"):
         node = Machine(inf.org_id, infr_id)
         (machine_id, config) = node.create_machine()
         parser.set('Machine', 'id', str(machine_id))
@@ -44,18 +45,15 @@ def main():
         cfgfile = open("cfg/config.info",'w')
         parser.write(cfgfile)
         cfgfile.close()
+        config_json=json.dumps(config)
     else:
         machine_id = cfg_machine_id
+        config_json = parser.get('Machine','config')
 
-    meter = readings(machine_id, inf.org_id, infr_id)
+    meter = readings(machine_id, inf.org_id, infr_id, config_json)
     meter.gather_metrics()
 
 if __name__ == "__main__":
     main()
 
-#TODO
-# update data points - real ones
-# get cpu, get disk, get nics
-# arrays of nics and disks
-# cpu.cpuinfo - speed * cpucount
 
