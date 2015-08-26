@@ -16,8 +16,6 @@ from lib.readings import readings
 from lib.machine import machine
 from lib.infrastructure import infrastructure
 from ConfigParser import SafeConfigParser
-# import platform
-# import cpu-info
 
 def main():
     parser = SafeConfigParser()
@@ -50,7 +48,6 @@ def main():
         machine_id = cfg_machine_id
 
     meter = readings(machine_id, inf.org_id, infr_id)
-
     meter.gather_metrics()
 
 if __name__ == "__main__":

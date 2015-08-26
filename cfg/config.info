@@ -1,36 +1,36 @@
 [infrastructure]
-id = 583
+id = 0
 name = new infra 01
 
 [machine]
 id = 0
 config = {
 	    "cpu_count": 8, 
-	    "cpu_speed_mhz": 21600000000, 
+	    "cpu_speed_mhz": 18400000000, 
 	    "disks": [
 	        {
-	            "maximum_size_bytes": 498768031744, 
-	            "name": "/dev/disk0s2", 
+	            "maximum_size_bytes": 499046809600, 
+	            "name": "/dev/disk1", 
 	            "type": "DISK"
 	        }
 	    ], 
 	    "maximum_memory_bytes": 17179869184, 
-	    "name": "server_54d50bff-1721-402b-9263-036ca7855374", 
+	    "name": "server_44849521-6ccd-4dd9-ae7a-d0d5f8fe0f71", 
 	    "nics": [
 	        {
 	            "kind": 0, 
-	            "link": "10.71.1.21", 
+	            "link": "192.168.1.6", 
 	            "mac_address": "aa:aa:aa:aa:aa:aa", 
 	            "name": "en0"
 	        }, 
 	        {
 	            "kind": 0, 
-	            "link": "10.71.1.20", 
+	            "link": "192.168.99.1", 
 	            "mac_address": "aa:aa:aa:aa:aa:aa", 
-	            "name": "en17"
+	            "name": "vboxnet1"
 	        }
 	    ], 
 	    "status": "poweredOn", 
-	    "virtual_name": "server_54d50bff-1721-402b-9263-036ca7855374"
+	    "virtual_name": "server_44849521-6ccd-4dd9-ae7a-d0d5f8fe0f71"
 	}
 

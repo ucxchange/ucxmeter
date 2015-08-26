@@ -61,10 +61,14 @@ class machine(object):
         self.disk_info = []
         disks = psutil.disk_partitions()
         for disk in disks:
-            total_disk_size = psutil.disk_usage(disk[1])[0]
-            self.disk_info.append({"name": disk[0],
-                                   "maximum_size_bytes": total_disk_size,
-                                   "type": "DISK"})
+            if not disk.fstype:
+                continue
+                i = 1
+            else:
+                total_disk_size = psutil.disk_usage(disk[1])[0]
+                self.disk_info.append({"name": disk[0],
+                                       "maximum_size_bytes": total_disk_size,
+                                       "type": "DISK"})
 
         i = 1
 
@@ -96,7 +100,7 @@ class machine(object):
 
     def post_machine(self):
 
-        URI = "https://api.6fusion.com:443/api/v2/"
+        URI = "https://console.6fusion.com:443/api/v2/"
         URI += "organizations/%s/infrastructures/%s/machines.json?access_token=%s" % (self.org_id,
                                                                                       self.infra_id,
                                                                                       oauth_token)
