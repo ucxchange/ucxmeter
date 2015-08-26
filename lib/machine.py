@@ -132,9 +132,8 @@ class Machine(object):
 
 
 def main():
+
     machineInfo = Machine()
-
-
 
     machineInfo.remove_machine(machine_id='381041')
 
