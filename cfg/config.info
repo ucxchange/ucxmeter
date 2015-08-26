@@ -1,9 +1,9 @@
 [infrastructure]
-id = 0
+id = 583
 name = new infra 01
 
 [Machine]
-id = 0
+id = 542187
 config = {
 	    "cpu_count": 8, 
 	    "cpu_speed_mhz": 18400000000, 
@@ -15,11 +15,11 @@ config = {
 	        }
 	    ], 
 	    "maximum_memory_bytes": 17179869184, 
-	    "name": "server_44849521-6ccd-4dd9-ae7a-d0d5f8fe0f71", 
+	    "name": "server_959f6b44-9273-4f34-8644-2f94b75a5299", 
 	    "nics": [
 	        {
 	            "kind": 0, 
-	            "link": "192.168.1.6", 
+	            "link": "192.168.1.18", 
 	            "mac_address": "aa:aa:aa:aa:aa:aa", 
 	            "name": "en0"
 	        }, 
@@ -31,6 +31,6 @@ config = {
 	        }
 	    ], 
 	    "status": "poweredOn", 
-	    "virtual_name": "server_44849521-6ccd-4dd9-ae7a-d0d5f8fe0f71"
+	    "virtual_name": "server_959f6b44-9273-4f34-8644-2f94b75a5299"
 	}
 

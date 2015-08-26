@@ -9,7 +9,7 @@ headers = {'content-type': 'application/json'}
 oauth_token = "30a62bf3a34104c882eaa47655e99fa6b81ea1fd3428fa5f5e43b74b4b0a7729"
 
 class Machine(object):
-    def __init__(self, org_id=4196, infra_id=523):
+    def __init__(self, org_id=4196, infra_id=0):
         self.org_id = org_id
         self.infra_id = infra_id
         self.cpu_speed = None
@@ -134,9 +134,7 @@ class Machine(object):
 def main():
     machineInfo = Machine()
 
-
-
-    machineInfo.remove_machine(machine_id='381041')
+#    machineInfo.remove_machine(machine_id='381041')
 
     i = 1
 
