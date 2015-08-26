@@ -100,7 +100,7 @@ class machine(object):
 
     def post_machine(self):
 
-        URI = "https://api.6fusion.com:443/api/v2/"
+        URI = "https://console.6fusion.com:443/api/v2/"
         URI += "organizations/%s/infrastructures/%s/machines.json?access_token=%s" % (self.org_id,
                                                                                       self.infra_id,
                                                                                       oauth_token)
