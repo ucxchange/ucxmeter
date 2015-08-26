@@ -13,7 +13,7 @@
 # When supplying disk.used.latest, the Instance should be set to DISKFILE
 
 from lib.readings import readings
-from lib.machine import machine
+from lib.machine import Machine
 from lib.infrastructure import infrastructure
 from ConfigParser import SafeConfigParser
 
@@ -22,7 +22,7 @@ def main():
     parser.read('cfg/config.info')
     cfg_infr_name = parser.get('infrastructure','name')
     cfg_infr_id = parser.get('infrastructure', 'id')
-    cfg_machine_id = parser.get('machine', 'id')
+    cfg_machine_id = parser.get('Machine', 'id')
 
     inf = infrastructure()
 
@@ -37,10 +37,10 @@ def main():
         infr_id = cfg_infr_id
 
     if cfg_machine_id=="0":
-        node = machine(inf.org_id, infr_id)
+        node = Machine(inf.org_id, infr_id)
         (machine_id, config) = node.create_machine()
-        parser.set('machine', 'id', str(machine_id))
-        parser.set('machine', 'config', config)
+        parser.set('Machine', 'id', str(machine_id))
+        parser.set('Machine', 'config', config)
         cfgfile = open("cfg/config.info",'w')
         parser.write(cfgfile)
         cfgfile.close()

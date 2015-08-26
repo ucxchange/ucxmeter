@@ -43,7 +43,7 @@ class infrastructure(object):
             }
 
         if self.check_infr_exist(infr_name):
-            print("Infrastructure exists. Moving onto adding machine.")
+            print("Infrastructure exists. Moving onto adding Machine.")
         else:
             try:
                 URI = "https://console.6fusion.com:443/api/v2/"

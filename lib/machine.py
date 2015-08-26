@@ -8,10 +8,15 @@ import uuid
 headers = {'content-type': 'application/json'}
 oauth_token = "30a62bf3a34104c882eaa47655e99fa6b81ea1fd3428fa5f5e43b74b4b0a7729"
 
-class machine(object):
+class Machine(object):
     def __init__(self, org_id=4196, infra_id=523):
         self.org_id = org_id
         self.infra_id = infra_id
+        self.cpu_speed = None
+        self.cores = None
+        self.total_cpu_speed = None
+        self.nics = []
+        self.total_memory = None
 
     def machine_exist(self, machine_id):
 
@@ -34,15 +39,14 @@ class machine(object):
         i = 1
 
     def get_cpu_info(self):
-        cInfo = cpuinfo.get_cpu_info()
-        self.cpu_speed = cInfo['hz_actual_raw'][0]
-        self.cores = cInfo['count']
+        cpu_info = cpuinfo.get_cpu_info()
+        self.cpu_speed = cpu_info['hz_actual_raw'][0]
+        self.cores = cpu_info['count']
         self.total_cpu_speed = self.cpu_speed * self.cores
 
         i = 1
 
     def get_nics(self):
-        self.nics = []
         for interface in interfaces():
             try:
                 for link in ifaddresses(interface)[AF_INET]:
@@ -128,7 +132,7 @@ class machine(object):
 
 
 def main():
-    machineInfo = machine()
+    machineInfo = Machine()
 
 
 
