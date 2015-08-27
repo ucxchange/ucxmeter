@@ -57,7 +57,7 @@ def main():
         cfgfile = open("cfg/config.info",'w')
         parser.write(cfgfile)
         cfgfile.close()
-        config_json=json.dumps(config)
+        config_json=config
     else:
         machine_id = cfg_machine_id
         config_json = parser.get('machine','config')
