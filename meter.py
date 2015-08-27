@@ -50,7 +50,7 @@ def main():
         machine_id = cfg_machine_id
         config_json = parser.get('Machine','config')
 
-    meter = readings(machine_id, inf.org_id, infr_id, config_json)
+    meter = readings(machine_id, inf.org_id, infr_id, json.loads(config_json))
     meter.gather_metrics()
 
 if __name__ == "__main__":

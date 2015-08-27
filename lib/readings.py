@@ -20,8 +20,9 @@ class readings(object):
         self.machine_id = machine_id
         self.org_id = org_id
         self.infr_id = infr_id
+        self.disk_readings = []
+        self.nic_readings = []
         try:
-            temp_json = json.loads(mach_config)
             temp = mach_config['cpu_count']
             self.mach_config = mach_config
         except:
@@ -29,142 +30,147 @@ class readings(object):
 
     def gather_metrics(self):
         while True:
-            time.sleep(20)
+            self.insertTime = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
             self.send_metrics()
+            time.sleep(10)
 
     def get_cpu(self):
+        self.cpu_percent = psutil.cpu_percent()
+        i = 1
         return psutil.cpu_percent()
 
     def get_memory(self):
-        temp = psutil.virtual_memory().used
-        return temp
-
-    def get_disk_io(self):
-        print("")
+        self.memory_used = psutil.virtual_memory().used
+        i = 1
+        return self.memory_used
 
     def disk_info(self):
-        # "disks": [
-        #   {
-        #     "id": 0,
-        #     "readings": [
-        #       {
-        #         "reading_at": "",
-        #         "usage_bytes": 0,
-        #         "read_kilobytes": 0,
-        #         "write_kilobytes": 0
-        #       }]
-        #   }]
-        self.disk_info = []
-        disks = psutil.disk_partitions()
-        disk_io = psutil.disk_io_counters(perdisk=True)
-        disk_io_read_kb = disk_io.read_bytes/1000
-        disk_io_write_kb = disk_io.write_bytes/1000
-        disk_io_usage_bytes = psutil.disk_usage("/")
-        for disk in disks:
-            if not disk.fstype:
-                continue
-                i = 1
-            else:
-                self.disk_info.append({"id": disk[0],
-                                       "readings": [
-                                           {"reading_at": self.insertTime,
-                                            "usage_bytes": disk_io_usage_bytes[0],
-                                            "read_kilobytes": disk_io_read_kb[0],
-                                            "write_kilobytes": disk_io_write_kb[0]
-                                            }]
-                                       })
-        i = 1
 
+        disk_readings = []
+
+        if 'read_count' in self.mach_config['disks'][0]:
+            io_counter = psutil.disk_io_counters()
+
+            kb_read = abs(io_counter[2] - self.mach_config['disks'][0]['read_count']) / 1000
+            kb_write = abs(io_counter[3] - self.mach_config['disks'][0]['write_count']) / 1000
+            kb_total = abs((io_counter[2] + io_counter[3]) - self.mach_config['disks'][0]['total_count']) / 1000
+
+            self.mach_config['disks'][0]['read_count'] = io_counter[2]
+            self.mach_config['disks'][0]['write_count'] = io_counter[3]
+            self.mach_config['disks'][0]['total_count'] = io_counter[2] + io_counter[3]
+
+
+            disk_readings.append({"id": self.mach_config['disks'][0]['disk_id'],
+                                       "readings": [
+                                           {
+                                               "reading_at": self.insertTime,
+                                               "usage_bytes": kb_total,
+                                               "read_kilobytes": kb_read,
+                                               "write_kilobytes": kb_write
+                                           }
+                                       ]})
+
+            print "\n%s" % self.insertTime
+
+            print "disk read: %s" % kb_read
+            print "disk write: %s" % kb_write
+
+        else:
+            disk_readings.append({"id": self.mach_config['disks'][0]['disk_id'],
+                                  "readings": [
+                                      {
+                                          "reading_at": self.insertTime,
+                                          "usage_bytes": 0,
+                                          "read_kilobytes": 0,
+                                          "write_kilobytes": 0
+                                      }
+                                  ]})
+
+            io_counter = psutil.disk_io_counters()
+
+            self.mach_config['disks'][0]['read_count'] = io_counter[2]
+            self.mach_config['disks'][0]['write_count'] = io_counter[3]
+            self.mach_config['disks'][0]['total_count'] = io_counter[2] + io_counter[3]
+
+        return disk_readings
 
     def nic_info(self):
-        # "nics": [
-        #   {
-        #     "id": 0,
-        #     "readings": [
-        #       {
-        #         "reading_at": "",
-        #         "transmit_kilobits": 0,
-        #         "receive_kilobits": 0
-        #       }]
-        # }]
-        self.nics=[]
-        for interface in interfaces():
-            try:
-                for link in ifaddresses(interface)[AF_INET]:
-                    self.nics.append({"id": interface,
-                                      "readings": [
-                                          {"reading_at": self.insertTime,
-                                           "transmit_kilobits": interface,
-                                           "receive_kilobits": interface
-                                           }]
-                                      })
-            except:
-                pass
-        i = 1
+        nic_readings = []
 
+        if "transmit_count" in self.mach_config['nics'][0]:
+            io_counter = psutil.net_io_counters()
 
-    def get_disk_percentage(self):
-        print("")
+            kb_write = abs(io_counter[0] - self.mach_config['nics'][0]['transmit_count']) / 1000
+            kb_read = abs(io_counter[1] - self.mach_config['nics'][0]['received_count']) / 1000
 
-    def network_io(self):
-        print("")
+            self.mach_config['nics'][0]['transmit_count'] = io_counter[0]
+            self.mach_config['nics'][0]['received_count'] = io_counter[1]
 
-    def get_disk_id(self):
-        try:
-            URI = "https://console.6fusion.com:443/api/v2/"
-            URI += "organizations/%s/infrastructures/%s/machines/%s/disks?" % (
-            self.org_id, self.infr_id, self.machine_id)
-            URI += "access_token=%s" % oauth_token
-            readingPost = requests.get(URI)
-            reqInfo = json.loads(readingPost.text)
-            disks = reqInfo['embedded']['disks'][0]['remote_id']
-            return disks
-        except Exception as e:
-            print('ERROR: ' + str(e))
-            raise Exception('Measurement upload failed.  Halting execution')
+            nic_readings.append({"id": self.mach_config['nics'][0]['nic_id'],
+                                 "readings": [
+                                     {
+                                         "reading_at": self.insertTime,
+                                         "transmit_kilobits": kb_write,
+                                         "receive_kilobits": kb_read
+                                     }
+                                 ]})
 
-    def get_nic_id(self):
-        try:
-            URI = "https://console.6fusion.com:443/api/v2/"
-            URI += "organizations/%s/infrastructures/%s/machines/%s/nics?" % (
-            self.org_id, self.infr_id, self.machine_id)
-            URI += "access_token=%s" % oauth_token
-            readingPost = requests.get(URI)
-            reqInfo = json.loads(readingPost.text)
-            nics = reqInfo['embedded']['nics'][0]['remote_id']
-            return nics
-        except Exception as e:
-            print('ERROR: ' + str(e))
-            raise Exception('Measurement upload failed.  Halting execution')
+            print "\nReceived: %s" % kb_read
+            print "Sent: %s" % kb_write
+
+        else:
+            nic_readings.append({"id": self.mach_config['nics'][0],
+                                 "readings": [
+                                     {
+                                         "reading_at": self.insertTime,
+                                         "transmit_kilobits": 0,
+                                         "receive_kilobits": 0
+                                     }
+                                 ]})
+            io_counter = psutil.net_io_counters()
+
+            self.mach_config['nics'][0]['transmit_count'] = io_counter[0]
+            self.mach_config['nics'][0]['received_count'] = io_counter[1]
+
+        return nic_readings
 
     def send_metrics(self):
-        self.insertTime = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
+
+        # To Check the Disk and Nic functions are working
+        #
+        # self.disk_info()
+        # self.nic_info()
+        #
+        # return
+
         reading_details = {
-            "disks": self.disk_info,
-            "nics": self.nic_info,
             "readings": [
                 {
                     "reading_at": self.insertTime,
                     "cpu_usage_percent": self.get_cpu(),
                     "memory_bytes": self.get_memory()
                 }
-            ]
+            ],
+            "disks": self.disk_info(),
+            "nics": self.nic_info()
         }
 
-    #        self.disk_io = self.get_disk_io()
-    #        self.disk_pctg = self.get_disk_percentage()
-    #        self.network = self.network_io()
-        reading_details_json = json.dumps(reading_details,sort_keys=True,indent=4)
+        reading_details_json = json.dumps(reading_details, sort_keys=True, indent=4)
+
+        #todo: fix the post for the readings
+
         try:
+
             URI = "https://console.6fusion.com:443/api/v2/"
-            URI += "organizations/%s/infrastructures/%s/machines/%s/readings.json?" % (
+            URI += "organizations/%s/infrastructures/%s/machines/%s/readings.json" % (
             self.org_id, self.infr_id, self.machine_id)
-            URI += "access_token=%s" % oauth_token
-            reading_data = json.dumps(reading_details_json, ensure_ascii=True)
-            readingPost = requests.post(URI, data=reading_data, headers=headers)
+            URI += "?access_token=%s" % oauth_token
+            # reading_data = json.dumps(reading_details_json, ensure_ascii=True)
+            readingPost = requests.post(URI, data=reading_details_json, headers=headers)
             if readingPost.request != 202:
                 print("There was an error in the update of the machine readings at " + str(self.insertTime) )
             return
+
         except Exception as e:
             print('ERROR: ' + str(e))
             raise Exception('Measurement upload failed.  Halting execution')

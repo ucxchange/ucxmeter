@@ -4,6 +4,7 @@ import psutil
 from cpuinfo import cpuinfo
 from netifaces import interfaces, ifaddresses, AF_INET
 import uuid
+import time
 
 headers = {'content-type': 'application/json'}
 oauth_token = "30a62bf3a34104c882eaa47655e99fa6b81ea1fd3428fa5f5e43b74b4b0a7729"
@@ -85,7 +86,7 @@ class Machine(object):
 
         server = "server_" + str(uuid.uuid4())
 
-        machine_details = {
+        self.machine_details = {
             "name": "%s" % server,
             "virtual_name": server,
             "cpu_count": self.cores,
@@ -95,8 +96,6 @@ class Machine(object):
             "disks": self.disk_info,
             "nics": self.nics
         }
-
-        self.json_details = json.dumps(machine_details, sort_keys=True, indent=4)
 
         self.post_machine()
 
@@ -110,13 +109,58 @@ class Machine(object):
                                                                                       oauth_token)
 
         try:
-            machine_post = requests.post(URI, data=self.json_details, headers=headers)
+            machine_post = requests.post(URI,
+                                         data=json.dumps(self.machine_details,
+                                                         sort_keys=True,
+                                                         indent=4),
+                                         headers=headers)
+
             req_info = json.loads(machine_post.text)
+
             self.machine_number = req_info['remote_id']
+            self.get_uuid(URI.replace('.json', "/%s.json" % self.machine_number, 1))
 
         except Exception as e:
             print('ERROR: ' + str(e))
             raise Exception('Infrastructure creation failed.  Halting execution')
+
+    def get_uuid(self, URI):
+
+        disk_uri = URI.replace(".json", "/disks.json", 1)
+
+        nic_uri = URI.replace(".json", "/nics.json", 1)
+
+        time.sleep(1)
+
+        try:
+            req = requests.get(disk_uri)
+            info = json.loads(req.text)
+
+            for disk in info['embedded']['disks']:
+                for d in self.machine_details['disks']:
+                    if disk['name'] == d['name']:
+                        d['disk_id'] = disk['remote_id']
+
+        except:
+            print "Disk info get failed"
+
+        try:
+            req = requests.get(nic_uri)
+            info = json.loads(req.text)
+
+            for nic in info['embedded']['nics']:
+                for n in self.machine_details['nics']:
+                    if nic['name'] == n['name']:
+                        n['nic_id'] = nic['remote_id']
+
+            i = 1
+
+        except:
+            print "Nic info get failed"
+
+        self.json_details = json.dumps(self.machine_details, sort_keys=True, indent=4)
+
+        i = 1
 
     def remove_machine(self, machine_id):
 
@@ -127,6 +171,7 @@ class Machine(object):
         req = requests.delete(URI)
         if req.status_code == 200:
             print "Machine %s was deleted" % machine_id
+
         else:
             print "Machine %s was not deleted" % machine_id
 
