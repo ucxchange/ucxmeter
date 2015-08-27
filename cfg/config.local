@@ -6,7 +6,7 @@ name = new infra 01
 id = 542217
 config = {
 	    "cpu_count": 8, 
-	    "cpu_speed_mhz": 21600000000, 
+	    "cpu_speed_mhz": 2.7,
 	    "disks": [
 	        {
 	            "disk_id": 4798252, 

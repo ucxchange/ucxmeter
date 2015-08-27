@@ -41,7 +41,7 @@ class machine(object):
 
     def get_cpu_info(self):
         cpu_info = cpuinfo.get_cpu_info()
-        self.cpu_speed = cpu_info['hz_actual_raw'][0]
+        self.cpu_speed = cpu_info['hz_actual_raw'][0] / 1000000000.0
         self.cores = cpu_info['count']
         self.total_cpu_speed = self.cpu_speed * self.cores
 
@@ -182,6 +182,7 @@ class machine(object):
 def main():
 
     machineInfo = machine()
+    machineInfo.get_cpu_info()
 
     machineInfo.remove_machine(machine_id='537247', infra=583)
 
