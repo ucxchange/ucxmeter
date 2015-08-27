@@ -41,7 +41,7 @@ class readings(object):
         return psutil.cpu_percent()
 
     def get_memory(self):
-        self.memory_used = psutil.virtual_memory().used
+        self.memory_used = psutil.virtual_memory().total - psutil.virtual_memory().available
         i = 1
         return self.memory_used
 
@@ -61,8 +61,7 @@ class readings(object):
                 current_disk['read_count'] = io_counter[2]
                 current_disk['write_count'] = io_counter[3]
                 current_disk['total_count'] = total_disk
-    
-    
+        
                 disk_readings.append({"id": current_disk['disk_id'],
                                            "readings": [
                                                {
@@ -101,39 +100,43 @@ class readings(object):
         nic_readings = []
 
         if "transmit_count" in self.mach_config['nics'][0]:
-            io_counter = psutil.net_io_counters()
+            io_counters = psutil.net_io_counters(pernic=True)
+            for current_nic in self.mach_config['nics']:
 
-            kb_write = abs(io_counter[0] - self.mach_config['nics'][0]['transmit_count']) / 1000
-            kb_read = abs(io_counter[1] - self.mach_config['nics'][0]['received_count']) / 1000
+                io_counter = io_counters[current_nic['name']]
 
-            self.mach_config['nics'][0]['transmit_count'] = io_counter[0]
-            self.mach_config['nics'][0]['received_count'] = io_counter[1]
-
-            nic_readings.append({"id": self.mach_config['nics'][0]['nic_id'],
-                                 "readings": [
-                                     {
-                                         "reading_at": self.insertTime,
-                                         "transmit_kilobits": kb_write,
-                                         "receive_kilobits": kb_read
-                                     }
-                                 ]})
-
-            print "\nReceived: %s" % kb_read
-            print "Sent: %s" % kb_write
+                kb_write = abs(io_counter[0] - current_nic['transmit_count']) / 1000
+                kb_read = abs(io_counter[1] - current_nic['received_count']) / 1000
+    
+                current_nic['transmit_count'] = io_counter[0]
+                current_nic['received_count'] = io_counter[1]
+    
+                nic_readings.append({"id": current_nic['nic_id'],
+                                     "readings": [
+                                         {
+                                             "reading_at": self.insertTime,
+                                             "transmit_kilobits": kb_write,
+                                             "receive_kilobits": kb_read
+                                         }
+                                     ]})
+    
+                print "\nReceived: %s" % kb_read
+                print "Sent: %s" % kb_write
 
         else:
-            nic_readings.append({"id": self.mach_config['nics'][0],
-                                 "readings": [
-                                     {
-                                         "reading_at": self.insertTime,
-                                         "transmit_kilobits": 0,
-                                         "receive_kilobits": 0
-                                     }
-                                 ]})
-            io_counter = psutil.net_io_counters()
-
-            self.mach_config['nics'][0]['transmit_count'] = io_counter[0]
-            self.mach_config['nics'][0]['received_count'] = io_counter[1]
+            for current_nic in self.mach_config['nics']:
+                nic_readings.append({"id": current_nic,
+                                     "readings": [
+                                         {
+                                             "reading_at": self.insertTime,
+                                             "transmit_kilobits": 0,
+                                             "receive_kilobits": 0
+                                         }
+                                     ]})
+                io_counter = psutil.net_io_counters()
+    
+                current_nic['transmit_count'] = io_counter[0]
+                current_nic['received_count'] = io_counter[1]
 
         return nic_readings
 
