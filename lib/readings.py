@@ -3,7 +3,6 @@ import json
 import psutil
 from datetime import datetime
 import time
-from netifaces import interfaces, ifaddresses, AF_INET
 
 headers = {'content-type': 'application/json'}
 oauth_token = "30a62bf3a34104c882eaa47655e99fa6b81ea1fd3428fa5f5e43b74b4b0a7729"
@@ -12,17 +11,15 @@ class readings(object):
     def __init__(self, machine_id=0, org_id=4196, infr_id=0, mach_config=None):
         self.send_metrics_api_url = "measurements"
         self.first_run = True
-        self.cpu = 0
-        self.mem = 0
-        self.network = 0
-        self.disk_pctg = 0
-        self.disk_amt = 0
-        self.disk_io = 0
+
         self.machine_id = machine_id
         self.org_id = org_id
         self.infr_id = infr_id
-        self.disk_readings = []
-        self.nic_readings = []
+        self.cpu_readings = []
+        self.memory_readings = []
+        self.disk_readings = {}
+        self.nic_readings = {}
+        self.send_counter = 0
         try:
             temp = mach_config['cpu_count']
             self.mach_config = mach_config
@@ -30,143 +27,154 @@ class readings(object):
             raise Exception('There is no configuration for this machine available at this time.')
 
     def gather_metrics(self):
+        disk_counters = psutil.disk_io_counters(perdisk=True)
+        for current_disk in self.mach_config['disks']:
+            for tDisk in disk_counters:
+                if tDisk.lower() in current_disk['name']:
+                    disk_counter = disk_counters[tDisk]
+            self.disk_readings[current_disk['disk_id']] = {'total_disk': [],
+                                                           'kb_read': [],
+                                                           'kb_write': [],
+                                                           'read_count': disk_counter[2],
+                                                           'write_count': disk_counter[3]}
+
+        nic_counters = psutil.net_io_counters(pernic=True)
+        for current_nic in self.mach_config['nics']:
+            nic_counter = nic_counters[current_nic['name']]
+            self.nic_readings[current_nic['nic_id']] = {'kb_read': [],
+                                                        'kb_write': [],
+                                                        'transmit_kb': nic_counter[0],
+                                                        'receive_kb': nic_counter[1]}
+
         while True:
             self.insertTime = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
-            self.send_metrics()
+            self.get_disk_reading()
+            self.get_nic_readings()
+            self.cpu_readings.append(psutil.cpu_percent())
+            self.memory_readings.append(psutil.virtual_memory().total - psutil.virtual_memory().available)
             time.sleep(10)
+            self.send_counter += 1
+
+            if self.send_counter > 30:
+                self.insertTime = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
+                self.send_metrics()
+                self.send_counter = 0
 
     def get_cpu(self):
-        self.cpu_percent = psutil.cpu_percent()
+        self.cpu_readings.append(psutil.cpu_percent())
         i = 1
         return psutil.cpu_percent()
 
     def get_memory(self):
+        self.memory_readings.append(psutil.virtual_memory().total - psutil.virtual_memory().available)
         self.memory_used = psutil.virtual_memory().total - psutil.virtual_memory().available
         i = 1
         return self.memory_used
 
-    def disk_info(self):
+    def get_nic_readings(self):
+        nic_counters = psutil.net_io_counters(pernic=True)
+        for current_nic in self.mach_config['nics']:
+            nic_counter = nic_counters[current_nic['name']]
 
+            nTemp = self.nic_readings[current_nic['nic_id']]
+
+            nTemp['kb_read'].append(abs(nic_counter[0] - nTemp['transmit_kb']) / 1000)
+            nTemp['kb_write'].append(abs(nic_counter[1] - nTemp['receive_kb']) / 1000)
+
+            nTemp['transmit_kb'] = nic_counter[0]
+            nTemp['receive_kb'] = nic_counter[1]
+
+            i = 1
+
+    def get_disk_reading(self):
+
+        for current_disk in self.mach_config['disks']:
+            dTemp = self.disk_readings[current_disk['disk_id']]
+            io_counter = psutil.disk_io_counters()
+            dTemp['total_disk'].append(psutil.disk_usage(current_disk['path'])[0])
+
+            dTemp['kb_read'].append(abs(io_counter[2] - dTemp['read_count']) / 1000)
+            dTemp['kb_write'].append(abs(io_counter[3] - dTemp['write_count']) / 1000)
+
+            dTemp['read_count'] = io_counter[2]
+            dTemp['write_count'] = io_counter[3]
+
+            i = 1
+
+    def disk_info(self):
         disk_readings = []
 
-        if 'read_count' in self.mach_config['disks'][0]:
-            for current_disk in self.mach_config['disks']:
-            
-                io_counter = psutil.disk_io_counters()
-                total_disk = psutil.disk_usage(current_disk['path'])[0]
-                
-                kb_read = abs(io_counter[2] - current_disk['read_count']) / 1000
-                kb_write = abs(io_counter[3] - current_disk['write_count']) / 1000
+        disks = self.disk_readings
 
-                current_disk['read_count'] = io_counter[2]
-                current_disk['write_count'] = io_counter[3]
-                current_disk['total_count'] = total_disk
-        
-                disk_readings.append({"id": current_disk['disk_id'],
-                                           "readings": [
-                                               {
-                                                   "reading_at": self.insertTime,
-                                                   "usage_bytes": total_disk,
-                                                   "read_kilobytes": kb_read,
-                                                   "write_kilobytes": kb_write
-                                               }
-                                           ]})
-    
-                print "\n%s" % self.insertTime
-    
-                print "disk read: %s" % kb_read
-                print "disk write: %s" % kb_write
+        for disk, info in disks.iteritems():
+            total_disk = sum(info['total_disk']) / len(info['total_disk'])
+            kb_read = sum(info['kb_read']) / len(info['kb_read'])
+            kb_write = sum(info['kb_write']) / len(info['kb_write'])
 
-        else:
-            disk_readings.append({"id": self.mach_config['disks'][0]['disk_id'],
-                                  "readings": [
-                                      {
-                                          "reading_at": self.insertTime,
-                                          "usage_bytes": 0,
-                                          "read_kilobytes": 0,
-                                          "write_kilobytes": 0
-                                      }
-                                  ]})
+            disk_readings.append({"id": str(disk),
+                                 "readings": [
+                                     {
+                                         "reading_at": self.insertTime,
+                                         "usage_bytes": total_disk,
+                                         "read_kilobytes": kb_read,
+                                         "write_kilobytes": kb_write
+                                     }
+                                 ]})
 
-            io_counter = psutil.disk_io_counters()
+            info['total_disk'] = []
+            info['kb_read'] = []
+            info['kb_write'] = []
 
-            self.mach_config['disks'][0]['read_count'] = io_counter[2]
-            self.mach_config['disks'][0]['write_count'] = io_counter[3]
-            self.mach_config['disks'][0]['total_count'] = io_counter[2] + io_counter[3]
+        i = 1
 
         return disk_readings
 
     def nic_info(self):
         nic_readings = []
 
-        if "transmit_count" in self.mach_config['nics'][0]:
-            io_counters = psutil.net_io_counters(pernic=True)
-            for current_nic in self.mach_config['nics']:
+        nics = self.nic_readings
 
-                io_counter = io_counters[current_nic['name']]
+        for nic, info in nics.iteritems():
+            kb_read = sum(info['kb_read'])/len(info['kb_read'])
+            kb_write = sum(info['kb_write']) / len(info['kb_write'])
 
-                kb_write = abs(io_counter[0] - current_nic['transmit_count']) / 1000
-                kb_read = abs(io_counter[1] - current_nic['received_count']) / 1000
-    
-                current_nic['transmit_count'] = io_counter[0]
-                current_nic['received_count'] = io_counter[1]
-    
-                nic_readings.append({"id": current_nic['nic_id'],
-                                     "readings": [
-                                         {
-                                             "reading_at": self.insertTime,
-                                             "transmit_kilobits": kb_write,
-                                             "receive_kilobits": kb_read
-                                         }
-                                     ]})
-    
-                print "\nReceived: %s" % kb_read
-                print "Sent: %s" % kb_write
+            nic_readings.append({"id": str(nic),
+                                 "readings": [
+                                     {
+                                         "reading_at": self.insertTime,
+                                         "transmit_kilobits": kb_write,
+                                         "receive_kilobits": kb_read
+                                     }
+                                 ]})
 
-        else:
-            for current_nic in self.mach_config['nics']:
-                nic_readings.append({"id": current_nic,
-                                     "readings": [
-                                         {
-                                             "reading_at": self.insertTime,
-                                             "transmit_kilobits": 0,
-                                             "receive_kilobits": 0
-                                         }
-                                     ]})
-                io_counter = psutil.net_io_counters()
-    
-                current_nic['transmit_count'] = io_counter[0]
-                current_nic['received_count'] = io_counter[1]
+            info['kb_read'] = []
+            info['kb_write'] = []
+
+        i = 1
 
         return nic_readings
 
     def send_metrics(self):
 
-        # To Check the Disk and Nic functions are working
-        #
-        # self.disk_info()
-        # self.nic_info()
-        #
-        # return
-
         reading_details = {
             "readings": [
                 {
                     "reading_at": self.insertTime,
-                    "cpu_usage_percent": self.get_cpu(),
-                    "memory_bytes": self.get_memory()
+                    "cpu_usage_percent": int(sum(self.cpu_readings) / len(self.cpu_readings)),
+                    "memory_bytes": sum(self.memory_readings) / len(self.memory_readings)
                 }
             ],
             "disks": self.disk_info(),
             "nics": self.nic_info()
         }
+        self.cpu_readings = []
+        self.memory_readings = []
 
         reading_details_json = json.dumps(reading_details, sort_keys=True, indent=4)
 
-        #todo: fix the post for the readings
+        print reading_details_json
 
         try:
-
             URI = "https://console.6fusion.com:443/api/v2/"
             URI += "organizations/%s/infrastructures/%s/machines/%s/readings.json" % (
             self.org_id, self.infr_id, self.machine_id)
