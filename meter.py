@@ -20,10 +20,18 @@ import json
 
 def main():
     parser = SafeConfigParser()
-    parser.read('cfg/config.info')
-    cfg_infr_name = parser.get('infrastructure','name')
-    cfg_infr_id = parser.get('infrastructure', 'id')
-    cfg_machine_id = parser.get('Machine', 'id')
+    try:
+        parser.read('cfg/config.info')
+        cfg_infr_name = parser.get('infrastructure','name')
+        cfg_infr_id = parser.get('infrastructure', 'id')
+        cfg_machine_id = parser.get('Machine', 'id')
+    except:
+        cfgfile = open("cfg/config.info",'w')
+        parser.set('infrastructure','id', '0')
+        parser.set('infrastructure','name', 'change_me')
+        parser.set('Machine','id', '0')
+        parser.write(cfgfile)
+        cfgfile.close()
 
     inf = infrastructure()
 
