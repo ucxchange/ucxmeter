@@ -45,7 +45,6 @@ class machine(object):
         self.cores = cpu_info['count']
         self.total_cpu_speed = self.cpu_speed * self.cores
 
-        i = 1
 
     def get_nics(self):
         for interface in interfaces():
