@@ -165,10 +165,10 @@ class readings(object):
             URI += "organizations/%s/infrastructures/%s/machines/%s/readings.json" % (
             self.org_id, self.infr_id, self.machine_id)
             URI += "?access_token=%s" % oauth_token
-            # reading_data = json.dumps(reading_details_json, ensure_ascii=True)
             readingPost = requests.post(URI, data=reading_details_json, headers=headers)
-            if readingPost.request != 202:
-                print("There was an error in the update of the machine readings at " + str(self.insertTime) )
+            if readingPost.status_code != 202:
+                print "There was an error %s in the update of the machine readings at %s " % (readingPost.status_code,
+                                                                                              self.insertTime)
             return
 
         except Exception as e:
