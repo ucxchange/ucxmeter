@@ -9,7 +9,7 @@ import time
 headers = {'content-type': 'application/json'}
 oauth_token = "30a62bf3a34104c882eaa47655e99fa6b81ea1fd3428fa5f5e43b74b4b0a7729"
 
-class Machine(object):
+class machine(object):
     def __init__(self, org_id=4196, infra_id=523):
         self.org_id = org_id
         self.infra_id = infra_id
@@ -162,25 +162,25 @@ class Machine(object):
 
         i = 1
 
-    def remove_machine(self, machine_id):
+    def remove_machine(self, machine_id, org=4196, infra=523):
 
         URI = "https://console.6fusion.com:443/api/v2"
-        URI += "/organizations/%s/infrastructures/%s/machines/%s.json" % (self.org_id, self.infra_id, machine_id)
+        URI += "/organizations/%s/infrastructures/%s/machines/%s.json" % (org, infra, machine_id)
         URI += "?access_token=%s" % oauth_token
 
         req = requests.delete(URI)
-        if req.status_code == 200:
-            print "Machine %s was deleted" % machine_id
+        if req.status_code == 204:
+            print "machine %s was deleted" % machine_id
 
         else:
-            print "Machine %s was not deleted" % machine_id
+            print "machine %s was not deleted" % machine_id
 
 
 def main():
 
-    machineInfo = Machine()
+    machineInfo = machine()
 
-    machineInfo.remove_machine(machine_id='381041')
+    machineInfo.remove_machine(machine_id='537247', infra=583)
 
     i = 1
 

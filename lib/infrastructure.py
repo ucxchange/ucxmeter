@@ -57,5 +57,5 @@ class infrastructure(object):
                 print('ERROR: ' + str(e))
                 raise Exception('Infrastructure creation failed.  Halting execution')
         else:
-            print("Infrastructure exists. Moving onto adding Machine.")
+            print("Infrastructure exists. Moving onto adding machine.")
             return infr_id
