@@ -10,9 +10,10 @@ headers = {'content-type': 'application/json'}
 oauth_token = "30a62bf3a34104c882eaa47655e99fa6b81ea1fd3428fa5f5e43b74b4b0a7729"
 
 class machine(object):
-    def __init__(self, org_id=4196, infra_id=523):
+    def __init__(self, org_id=4196, infra_id=523, infra_name='new infra 01'):
         self.org_id = org_id
         self.infra_id = infra_id
+        self.infra_name = infra_name
         self.cpu_speed = None
         self.cores = None
         self.total_cpu_speed = None
@@ -43,7 +44,6 @@ class machine(object):
         cpu_info = cpuinfo.get_cpu_info()
         self.cpu_speed = cpu_info['hz_actual_raw'][0] / 1000000000.0
         self.cores = cpu_info['count']
-        self.total_cpu_speed = self.cpu_speed * self.cores
 
         i = 1
 
@@ -89,8 +89,9 @@ class machine(object):
         self.machine_details = {
             "name": "%s" % server,
             "virtual_name": server,
+            "tags": self.infra_name,
             "cpu_count": self.cores,
-            "cpu_speed_mhz": self.total_cpu_speed,
+            "cpu_speed_mhz": self.cpu_speed,
             "maximum_memory_bytes": self.total_memory,
             "status": "poweredOn",
             "disks": self.disk_info,

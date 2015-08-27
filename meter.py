@@ -39,7 +39,6 @@ def main():
 
     inf = infrastructure()
 
-
     if (cfg_infr_id=="0" or cfg_infr_id=="None"):
         infr_id = inf.create_infr(cfg_infr_name)
         parser.set('infrastructure','id', str(infr_id))
@@ -50,7 +49,7 @@ def main():
         infr_id = cfg_infr_id
 
     if (cfg_machine_id=="0" or cfg_machine_id=="None"):
-        node = machine(inf.org_id, infr_id)
+        node = machine(inf.org_id, infr_id, cfg_infr_name)
         (machine_id, config) = node.create_machine()
         parser.set('machine', 'id', str(machine_id))
         parser.set('machine', 'config', config)

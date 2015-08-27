@@ -12,7 +12,7 @@ config = {
 	            "disk_id": 4798252, 
 	            "maximum_size_bytes": 498768031744, 
 	            "name": "/dev/disk0s2",
-	            "path": "/", 
+	            "path": "/",
 	            "type": "DISK"
 	        }
 	    ], 
