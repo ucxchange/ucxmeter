@@ -15,8 +15,11 @@
 from lib.readings import readings
 from lib.machine import machine
 from lib.infrastructure import infrastructure
-from ConfigParser import SafeConfigParser
 import json
+try:
+    from ConfigParser import SafeConfigParser
+except:
+    from configparser import SafeConfigParser
 
 def main():
     parser = SafeConfigParser()
