@@ -30,21 +30,30 @@ class readings(object):
         disk_counters = psutil.disk_io_counters(perdisk=True)
         for current_disk in self.mach_config['disks']:
             for tDisk in disk_counters:
-                if tDisk.lower() in current_disk['name']:
-                    disk_counter = disk_counters[tDisk]
-            self.disk_readings[current_disk['disk_id']] = {'total_disk': [],
+                try:
+                    if tDisk.lower() in current_disk['name']:
+                        disk_counter = disk_counters[tDisk]
+                except:
+                    pass
+            try:
+                self.disk_readings[current_disk['disk_id']] = {'total_disk': [],
                                                            'kb_read': [],
                                                            'kb_write': [],
                                                            'read_count': disk_counter[2],
                                                            'write_count': disk_counter[3]}
+            except:
+                pass
 
         nic_counters = psutil.net_io_counters(pernic=True)
         for current_nic in self.mach_config['nics']:
-            nic_counter = nic_counters[current_nic['name']]
-            self.nic_readings[current_nic['nic_id']] = {'kb_read': [],
+            try:
+                nic_counter = nic_counters[current_nic['name']]
+                self.nic_readings[current_nic['nic_id']] = {'kb_read': [],
                                                         'kb_write': [],
                                                         'transmit_kb': nic_counter[0],
                                                         'receive_kb': nic_counter[1]}
+            except:
+                pass
 
         while True:
             self.insertTime = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
@@ -74,17 +83,20 @@ class readings(object):
     def get_nic_readings(self):
         nic_counters = psutil.net_io_counters(pernic=True)
         for current_nic in self.mach_config['nics']:
-            nic_counter = nic_counters[current_nic['name']]
+            try:
+                nic_counter = nic_counters[current_nic['name']]
 
-            nTemp = self.nic_readings[current_nic['nic_id']]
+                nTemp = self.nic_readings[current_nic['nic_id']]
 
-            nTemp['kb_read'].append(abs(nic_counter[0] - nTemp['transmit_kb']) / 1000)
-            nTemp['kb_write'].append(abs(nic_counter[1] - nTemp['receive_kb']) / 1000)
+                nTemp['kb_read'].append(abs(nic_counter[0] - nTemp['transmit_kb']) / 1000)
+                nTemp['kb_write'].append(abs(nic_counter[1] - nTemp['receive_kb']) / 1000)
 
-            nTemp['transmit_kb'] = nic_counter[0]
-            nTemp['receive_kb'] = nic_counter[1]
+                nTemp['transmit_kb'] = nic_counter[0]
+                nTemp['receive_kb'] = nic_counter[1]
 
-            i = 1
+                i = 1
+            except:
+                pass
 
     def get_disk_reading(self):
 

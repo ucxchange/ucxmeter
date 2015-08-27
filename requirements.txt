@@ -1,0 +1,8 @@
+python-netifaces
+psutil
+python-cpuinfo
+json
+requests
+time
+datetime
+uuid
