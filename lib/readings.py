@@ -11,6 +11,7 @@ oauth_token = "30a62bf3a34104c882eaa47655e99fa6b81ea1fd3428fa5f5e43b74b4b0a7729"
 class readings(object):
     def __init__(self, machine_id=0, org_id=4196, infr_id=0, mach_config=None):
         self.send_metrics_api_url = "measurements"
+        self.first_run = True
         self.cpu = 0
         self.mem = 0
         self.network = 0
@@ -49,31 +50,33 @@ class readings(object):
         disk_readings = []
 
         if 'read_count' in self.mach_config['disks'][0]:
-            io_counter = psutil.disk_io_counters()
+            for current_disk in self.mach_config['disks']:
+            
+                io_counter = psutil.disk_io_counters()
+                total_disk = psutil.disk_usage(current_disk['path'])[0]
+                
+                kb_read = abs(io_counter[2] - current_disk['read_count']) / 1000
+                kb_write = abs(io_counter[3] - current_disk['write_count']) / 1000
 
-            kb_read = abs(io_counter[2] - self.mach_config['disks'][0]['read_count']) / 1000
-            kb_write = abs(io_counter[3] - self.mach_config['disks'][0]['write_count']) / 1000
-            kb_total = abs((io_counter[2] + io_counter[3]) - self.mach_config['disks'][0]['total_count']) / 1000
-
-            self.mach_config['disks'][0]['read_count'] = io_counter[2]
-            self.mach_config['disks'][0]['write_count'] = io_counter[3]
-            self.mach_config['disks'][0]['total_count'] = io_counter[2] + io_counter[3]
-
-
-            disk_readings.append({"id": self.mach_config['disks'][0]['disk_id'],
-                                       "readings": [
-                                           {
-                                               "reading_at": self.insertTime,
-                                               "usage_bytes": kb_total,
-                                               "read_kilobytes": kb_read,
-                                               "write_kilobytes": kb_write
-                                           }
-                                       ]})
-
-            print "\n%s" % self.insertTime
-
-            print "disk read: %s" % kb_read
-            print "disk write: %s" % kb_write
+                current_disk['read_count'] = io_counter[2]
+                current_disk['write_count'] = io_counter[3]
+                current_disk['total_count'] = total_disk
+    
+    
+                disk_readings.append({"id": current_disk['disk_id'],
+                                           "readings": [
+                                               {
+                                                   "reading_at": self.insertTime,
+                                                   "usage_bytes": total_disk,
+                                                   "read_kilobytes": kb_read,
+                                                   "write_kilobytes": kb_write
+                                               }
+                                           ]})
+    
+                print "\n%s" % self.insertTime
+    
+                print "disk read: %s" % kb_read
+                print "disk write: %s" % kb_write
 
         else:
             disk_readings.append({"id": self.mach_config['disks'][0]['disk_id'],
@@ -166,9 +169,13 @@ class readings(object):
             self.org_id, self.infr_id, self.machine_id)
             URI += "?access_token=%s" % oauth_token
             readingPost = requests.post(URI, data=reading_details_json, headers=headers)
+            if self.first_run:
+                self.first_run = False
+                return
             if readingPost.status_code != 202:
                 print "There was an error %s in the update of the machine readings at %s " % (readingPost.status_code,
                                                                                               self.insertTime)
+
             return
 
         except Exception as e:

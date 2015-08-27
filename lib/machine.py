@@ -140,6 +140,9 @@ class machine(object):
                 for d in self.machine_details['disks']:
                     if disk['name'] == d['name']:
                         d['disk_id'] = disk['remote_id']
+                    for partition in psutil.disk_partitions():
+                        if partition[0] == d['name']:
+                            d['path'] = partition[1]
 
         except:
             print "Disk info get failed"
