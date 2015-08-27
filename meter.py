@@ -18,6 +18,7 @@ from lib.infrastructure import infrastructure
 from ConfigParser import SafeConfigParser
 import json
 
+
 def main():
     parser = SafeConfigParser()
     try:
