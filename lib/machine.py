@@ -182,9 +182,9 @@ class machine(object):
 def main():
 
     machineInfo = machine()
-    machineInfo.get_cpu_info()
+    # machineInfo.get_cpu_info()
 
-    machineInfo.remove_machine(machine_id='543785', infra=583)
+    machineInfo.remove_machine(machine_id='544703', infra=583)
 
     i = 1
 

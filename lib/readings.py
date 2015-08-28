@@ -54,7 +54,7 @@ class readings(object):
             self.get_nic_readings()
             self.cpu_readings.append(psutil.cpu_percent())
             self.memory_readings.append(psutil.virtual_memory().total - psutil.virtual_memory().available)
-            time.sleep(1)
+            time.sleep(10)
             self.send_counter += 1
 
             if self.send_counter > 30:
