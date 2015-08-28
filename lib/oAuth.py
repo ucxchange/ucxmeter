@@ -23,6 +23,7 @@ class oAuth():
 
         except:
             print "Token update failed"
+            return False
 
         try:
             newJsonCred = oAuthCreds.to_json()
@@ -42,6 +43,7 @@ class oAuth():
     def getToken(self):
 
         newToken = self.updateToken()
+        print newToken
 
         i = 1
 

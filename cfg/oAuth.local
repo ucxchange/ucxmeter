@@ -1,0 +1,22 @@
+links for creating local oAuth creds
+
+UCX
+https://api.6fusion.com/oauth/authorize?scope=admin_organization&redirect_uri=http%3A%2F%2Foauth.ucxchange.com%3A10003&response_type=code&client_id=70f919525d9fb77cfa0e96018f988bd3e3e0cf69432d1dbfaa09c943d1023160&access_type=offline
+
+ICIx
+https://api.6fusion.com/oauth/authorize?scope=admin_organization&redirect_uri=http%3A%2F%2Fapplication.icixindia.com%3A10003&response_type=code&client_id=42e74087e11fde1db2dcb8554332d5863ce911b8424035c3b725efa739febd43&access_type=offline
+
+
+once you use the link above it will create a new oAuth in the proper DB.
+UCX Server: prod.ucxchange.com
+ICIx Server: 167.114.216.230
+
+if you don't know the login for the SQL sever, then you shouldn't be using this
+
+there will be a new entry in [UCXUsers][6FusionAccessTokens] with no userId.  copy the info out of jsonCreds and put the text into the oAuth.cfg file.
+
+remove the entry that has been had been used, as to not confuse other users
+
+Then run oAuth.py and make sure that you get a proper oAuth token.  If you do, then the app is set to use oAuth.py
+
+
