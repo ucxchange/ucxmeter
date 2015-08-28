@@ -136,7 +136,6 @@ class machine(object):
         try:
             req = requests.get(disk_uri)
             info = json.loads(req.text)
-
             for disk in info['embedded']['disks']:
                 for d in self.machine_details['disks']:
                     if disk['name'] == d['name']:

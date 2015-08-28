@@ -27,33 +27,26 @@ class readings(object):
             raise Exception('There is no configuration for this machine available at this time.')
 
     def gather_metrics(self):
-        disk_counters = psutil.disk_io_counters(perdisk=True)
-        for current_disk in self.mach_config['disks']:
-            for tDisk in disk_counters:
-                try:
-                    if tDisk.lower() in current_disk['name']:
-                        disk_counter = disk_counters[tDisk]
-                except:
-                    pass
-            try:
-                self.disk_readings[current_disk['disk_id']] = {'total_disk': [],
+
+        try:
+            disk_counter = psutil.disk_io_counters()
+            current_disk = self.mach_config['disks'][0]
+            self.disk_readings[current_disk['disk_id']] = {'total_disk': [],
                                                            'kb_read': [],
                                                            'kb_write': [],
                                                            'read_count': disk_counter[2],
                                                            'write_count': disk_counter[3]}
-            except:
-                pass
+        except:
+            pass
 
-        nic_counters = psutil.net_io_counters(pernic=True)
-        for current_nic in self.mach_config['nics']:
-            try:
-                nic_counter = nic_counters[current_nic['name']]
-                self.nic_readings[current_nic['nic_id']] = {'kb_read': [],
-                                                        'kb_write': [],
-                                                        'transmit_kb': nic_counter[0],
-                                                        'receive_kb': nic_counter[1]}
-            except:
-                pass
+        try:
+            nic_counter = psutil.net_io_counters()
+            self.nic_readings[self.mach_config['nics'][0]['nic_id']] = {'kb_read': [],
+                                                              'kb_write': [],
+                                                              'transmit_kb': nic_counter[0],
+                                                              'receive_kb': nic_counter[1]}
+        except:
+            pass
 
         while True:
             self.insertTime = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
@@ -61,7 +54,7 @@ class readings(object):
             self.get_nic_readings()
             self.cpu_readings.append(psutil.cpu_percent())
             self.memory_readings.append(psutil.virtual_memory().total - psutil.virtual_memory().available)
-            time.sleep(10)
+            time.sleep(1)
             self.send_counter += 1
 
             if self.send_counter > 30:
@@ -81,22 +74,20 @@ class readings(object):
         return self.memory_used
 
     def get_nic_readings(self):
-        nic_counters = psutil.net_io_counters(pernic=True)
-        for current_nic in self.mach_config['nics']:
-            try:
-                nic_counter = nic_counters[current_nic['name']]
+        nic_counter = psutil.net_io_counters()
+        nic_id = self.mach_config['nics'][0]['nic_id']
+        try:
+            nTemp = self.nic_readings[nic_id]
 
-                nTemp = self.nic_readings[current_nic['nic_id']]
+            nTemp['kb_read'].append(abs(nic_counter[0] - nTemp['transmit_kb']) / 1000)
+            nTemp['kb_write'].append(abs(nic_counter[1] - nTemp['receive_kb']) / 1000)
 
-                nTemp['kb_read'].append(abs(nic_counter[0] - nTemp['transmit_kb']) / 1000)
-                nTemp['kb_write'].append(abs(nic_counter[1] - nTemp['receive_kb']) / 1000)
+            nTemp['transmit_kb'] = nic_counter[0]
+            nTemp['receive_kb'] = nic_counter[1]
 
-                nTemp['transmit_kb'] = nic_counter[0]
-                nTemp['receive_kb'] = nic_counter[1]
-
-                i = 1
-            except:
-                pass
+            i = 1
+        except:
+            pass
 
     def get_disk_reading(self):
 
