@@ -12,6 +12,8 @@
 # Notes
 # When supplying disk.used.latest, the Instance should be set to DISKFILE
 
+# pip install -r requirements.txt
+
 from lib.readings import readings
 from lib.machine import machine
 from lib.infrastructure import infrastructure

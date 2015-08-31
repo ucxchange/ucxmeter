@@ -101,17 +101,20 @@ class readings(object):
     def get_disk_reading(self):
 
         for current_disk in self.mach_config['disks']:
-            dTemp = self.disk_readings[current_disk['disk_id']]
-            io_counter = psutil.disk_io_counters()
-            dTemp['total_disk'].append(psutil.disk_usage(current_disk['path'])[0])
+            try:
+                dTemp = self.disk_readings[current_disk['disk_id']]
+                io_counter = psutil.disk_io_counters()
+                dTemp['total_disk'].append(psutil.disk_usage(current_disk['path'])[0])
 
-            dTemp['kb_read'].append(abs(io_counter[2] - dTemp['read_count']) / 1000)
-            dTemp['kb_write'].append(abs(io_counter[3] - dTemp['write_count']) / 1000)
+                dTemp['kb_read'].append(abs(io_counter[2] - dTemp['read_count']) / 1000)
+                dTemp['kb_write'].append(abs(io_counter[3] - dTemp['write_count']) / 1000)
 
-            dTemp['read_count'] = io_counter[2]
-            dTemp['write_count'] = io_counter[3]
+                dTemp['read_count'] = io_counter[2]
+                dTemp['write_count'] = io_counter[3]
 
-            i = 1
+                i = 1
+            except:
+                pass
 
     def disk_info(self):
         disk_readings = []
