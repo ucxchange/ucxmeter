@@ -5,12 +5,15 @@ from cpuinfo import cpuinfo
 from netifaces import interfaces, ifaddresses, AF_INET
 import uuid
 import time
+from oAuth import oAuth
+import os
 
 headers = {'content-type': 'application/json'}
 oauth_token = "30a62bf3a34104c882eaa47655e99fa6b81ea1fd3428fa5f5e43b74b4b0a7729"
 
 class machine(object):
-    def __init__(self, org_id=4196, infra_id=523, infra_name='new infra 01'):
+    def __init__(self, org_id=4196, infra_id=583, infra_name='new infra 01'):
+        self.oAuth_token = oAuth().updateToken()
         self.org_id = org_id
         self.infra_id = infra_id
         self.infra_name = infra_name
@@ -42,7 +45,7 @@ class machine(object):
 
     def get_cpu_info(self):
         cpu_info = cpuinfo.get_cpu_info()
-        self.cpu_speed = cpu_info['hz_actual_raw'][0] / 1000000000.0
+        self.cpu_speed = cpu_info['hz_actual_raw'][0] / 1000000.0
         self.cores = cpu_info['count']
 
         i = 1
@@ -84,12 +87,13 @@ class machine(object):
         self.get_nics()
         self.get_disks()
 
-        server = "server_" + str(uuid.uuid4())
+        server = "Server" + str(uuid.uuid4())
 
         self.machine_details = {
             "name": "%s" % server,
             "virtual_name": server,
             "tags": self.infra_name,
+            # "tags": [self.infra_name, 'Rico laptop'],
             "cpu_count": self.cores,
             "cpu_speed_mhz": self.cpu_speed,
             "maximum_memory_bytes": self.total_memory,
@@ -182,7 +186,8 @@ class machine(object):
 def main():
 
     machineInfo = machine()
-    # machineInfo.get_cpu_info()
+    machineInfo.create_machine()
+    machineInfo.get_cpu_info()
 
     machineInfo.remove_machine(machine_id='544703', infra=583)
 

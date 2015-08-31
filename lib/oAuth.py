@@ -6,13 +6,21 @@ from oauth2client.client import OAuth2Credentials
 
 class oAuth():
     def __init__(self):
-        self.oAuthFile = '../cfg/oAuth.cfg'
-
+        try:
+            self.oAuthFile = '../cfg/oAuth.cfg'
+        except:
+            self.oAuthFile = '/cfg/oAuth.cfg'
 
     def updateToken(self):
 
-        with open(self.oAuthFile) as data_file:
-            data = json.load(data_file)
+        try:
+            with open('../cfg/oAuth.cfg') as data_file:
+                self.oAuthFile = '../cfg/oAuth.cfg'
+                data = json.load(data_file)
+        except:
+            with open('cfg/oAuth.cfg') as data_file:
+                self.oAuthFile = 'cfg/oAuth.cfg'
+                data = json.load(data_file)
         jsonCreds = json.dumps(data)
         i = 1
 
