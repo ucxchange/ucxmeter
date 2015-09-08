@@ -1,19 +1,19 @@
-import requests
 import json
+from netifaces import interfaces, ifaddresses, AF_INET
+import time
+import socket
+from datetime import datetime
+
+import requests
 import psutil
 from cpuinfo import cpuinfo
-from netifaces import interfaces, ifaddresses, AF_INET
-import uuid
-import time
-from oAuth import oAuth
-import os
 
 headers = {'content-type': 'application/json'}
 oauth_token = "30a62bf3a34104c882eaa47655e99fa6b81ea1fd3428fa5f5e43b74b4b0a7729"
 
 class machine(object):
     def __init__(self, org_id=4196, infra_id=583, infra_name='new infra 01'):
-        self.oAuth_token = oAuth().updateToken()
+        # self.oAuth_token = oAuth().updateToken()
         self.org_id = org_id
         self.infra_id = infra_id
         self.infra_name = infra_name
@@ -87,11 +87,11 @@ class machine(object):
         self.get_nics()
         self.get_disks()
 
-        server = "Server" + str(uuid.uuid4())
+        name = socket.gethostname() + '_' + datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
 
         self.machine_details = {
-            "name": "%s" % server,
-            "virtual_name": server,
+            "name": "%s" % name,
+            "virtual_name": name,
             "tags": self.infra_name,
             # "tags": [self.infra_name, 'Rico laptop'],
             "cpu_count": self.cores,
@@ -149,7 +149,7 @@ class machine(object):
                             d['path'] = partition[1]
 
         except:
-            print "Disk info get failed"
+            print("Disk info get failed")
 
         try:
             req = requests.get(nic_uri)
@@ -163,13 +163,13 @@ class machine(object):
             i = 1
 
         except:
-            print "Nic info get failed"
+            print("Nic info get failed")
 
         self.json_details = json.dumps(self.machine_details, sort_keys=True, indent=4)
 
         i = 1
 
-    def remove_machine(self, machine_id, org=4196, infra=523):
+    def remove_machine (self, machine_id, org=4196, infra=523):
 
         URI = "https://console.6fusion.com:443/api/v2"
         URI += "/organizations/%s/infrastructures/%s/machines/%s.json" % (org, infra, machine_id)
@@ -186,10 +186,10 @@ class machine(object):
 def main():
 
     machineInfo = machine()
-    machineInfo.create_machine()
-    machineInfo.get_cpu_info()
+    # machineInfo.create_machine()
+    # machineInfo.get_cpu_info()
 
-    machineInfo.remove_machine(machine_id='546305', infra=583)
+    machineInfo.remove_machine(machine_id='554381', infra=594)
 
     i = 1
 

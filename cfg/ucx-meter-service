@@ -1,45 +1,37 @@
 #! /bin/sh
 
-NAME=ucx-meter-service
-DESC="UCX WAC Meter"
-PIDFILE="/var/run/${NAME}.pid"
-LOGFILE="/var/log/${NAME}.log"
-
-DAEMON="/usr/bin/python"
-
-DAEMON_OPTS="/etc/ucx-meter/meter.py"
-
-START_OPTS="--start --background --make-pidfile --pidfile ${PIDFILE} --exec ${DAEMON} ${DAEMON_OPTS}"
-STOP_OPTS="--stop --pidfile ${PIDFILE}"
+PATH=/bin:/usr/bin:/sbin:/usr/sbin
+DAEMON=./run-meter
+PIDFILE=/var/run/run-meter.pid
 
 test -x $DAEMON || exit 0
 
-set -e
+. /lib/lsb/init-functions
 
 case "$1" in
-start)
-echo -n "Starting ${DESC}: "
-start-stop-daemon $START_OPTS >> $LOGFILE
-echo "$NAME."
-;;
-stop)
-echo -n "Stopping $DESC: "
-start-stop-daemon $STOP_OPTS
-echo "$NAME."
-rm -f $PIDFILE
-;;
-restart|force-reload)
-echo -n "Restarting $DESC: "
-start-stop-daemon $STOP_OPTS
-sleep 1
-start-stop-daemon $START_OPTS >> $LOGFILE
-echo "$NAME."
-;;
-*)
-N=/etc/init.d/$NAME
-echo "Usage: $N {start|stop|restart|force-reload}" >&2
-exit 1
-;;
+  start)
+     log_daemon_msg "Starting feedparser"
+     start_daemon -p $PIDFILE $DAEMON
+     log_end_msg $?
+   ;;
+  stop)
+     log_daemon_msg "Stopping feedparser"
+     killproc -p $PIDFILE $DAEMON
+     PID=`ps x |grep feed | head -1 | awk '{print $1}'`
+     kill -9 $PID       
+     log_end_msg $?
+   ;;
+  force-reload|restart)
+     $0 stop
+     $0 start
+   ;;
+  status)
+     status_of_proc -p $PIDFILE $DAEMON atd && exit 0 || exit $?
+   ;;
+ *)
+   echo "Usage: /etc/init.d/atd {start|stop|restart|force-reload|status}"
+   exit 1
+  ;;
 esac
 
 exit 0

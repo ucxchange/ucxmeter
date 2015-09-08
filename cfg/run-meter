@@ -1,0 +1,3 @@
+#!/bin/sh
+script='../meter.py'
+/usr/bin/python $script &
