@@ -1,6 +1,6 @@
 # Created by .ignore support plugin (hsz.mobi)
-/.idea/*
-
+.idea/*
+.DS_Store/*
 cfg/config.local
 cfg/oAuth.cfg
 cfg/oAuth.local
