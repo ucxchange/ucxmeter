@@ -1,7 +1,7 @@
 #! /bin/sh
 
 PATH=/bin:/usr/bin:/sbin:/usr/sbin
-DAEMON=./run-meter
+DAEMON=/var/ucx_meter/cfg/run-meter
 PIDFILE=/var/run/run-meter.pid
 
 test -x $DAEMON || exit 0
@@ -11,14 +11,13 @@ test -x $DAEMON || exit 0
 case "$1" in
   start)
      log_daemon_msg "Starting feedparser"
-     start_daemon -p $PIDFILE $DAEMON
+     start-stop-daemon --pidfile $PIDFILE --startas $DAEMON --start
+     echo $!
      log_end_msg $?
    ;;
   stop)
      log_daemon_msg "Stopping feedparser"
-     killproc -p $PIDFILE $DAEMON
-     PID=`ps x |grep feed | head -1 | awk '{print $1}'`
-     kill -9 $PID       
+     start-stop-daemon --pidfile $PIDFILE --stop
      log_end_msg $?
    ;;
   force-reload|restart)
