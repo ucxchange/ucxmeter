@@ -189,7 +189,7 @@ def main():
     # machineInfo.create_machine()
     # machineInfo.get_cpu_info()
 
-    machineInfo.remove_machine(machine_id='554381', infra=594)
+    machineInfo.remove_machine(machine_id='561367', infra=589)
 
     i = 1
 

@@ -1,6 +1,9 @@
-# Created by .ignore support plugin (hsz.mobi)
-.idea/*
-.DS_Store/*
+/.idea
 cfg/config.local
 cfg/oAuth.cfg
 cfg/oAuth.local
+/.project
+infrastructure.pyc
+readings.pyc
+machine.pyc
+__init__.pyc

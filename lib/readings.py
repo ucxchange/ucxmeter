@@ -1,8 +1,9 @@
-import requests
 import json
-import psutil
 from datetime import datetime
 import time
+
+import requests
+import psutil
 
 headers = {'content-type': 'application/json'}
 oauth_token = "30a62bf3a34104c882eaa47655e99fa6b81ea1fd3428fa5f5e43b74b4b0a7729"
@@ -49,7 +50,7 @@ class readings(object):
             pass
 
         while True:
-            self.insertTime = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
+            self.insertTime = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
             self.get_disk_reading()
             self.get_nic_readings()
             self.cpu_readings.append(psutil.cpu_percent())
@@ -58,7 +59,7 @@ class readings(object):
             self.send_counter += 1
 
             if self.send_counter > 30:
-                self.insertTime = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
+                self.insertTime = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
                 self.send_metrics()
                 self.send_counter = 0
 
@@ -95,17 +96,17 @@ class readings(object):
             try:
                 dTemp = self.disk_readings[current_disk['disk_id']]
                 io_counter = psutil.disk_io_counters()
-                dTemp['total_disk'].append(psutil.disk_usage(current_disk['path'])[0])
+                dTemp['total_disk'].append(psutil.disk_usage(current_disk['path'])[1])
 
                 dTemp['kb_read'].append(abs(io_counter[2] - dTemp['read_count']) / 1000)
                 dTemp['kb_write'].append(abs(io_counter[3] - dTemp['write_count']) / 1000)
 
                 dTemp['read_count'] = io_counter[2]
                 dTemp['write_count'] = io_counter[3]
-
-                i = 1
             except:
                 pass
+
+            i = 1
 
     def disk_info(self):
         disk_readings = []
@@ -113,20 +114,22 @@ class readings(object):
         disks = self.disk_readings
 
         for disk, info in disks.iteritems():
-            total_disk = sum(info['total_disk']) / len(info['total_disk'])
-            kb_read = sum(info['kb_read']) / len(info['kb_read'])
-            kb_write = sum(info['kb_write']) / len(info['kb_write'])
+            try:
+                total_disk = sum(info['total_disk']) / len(info['total_disk'])
+                kb_read = sum(info['kb_read']) / len(info['kb_read'])
+                kb_write = sum(info['kb_write']) / len(info['kb_write'])
 
-            disk_readings.append({"id": str(disk),
-                                 "readings": [
-                                     {
-                                         "reading_at": self.insertTime,
-                                         "usage_bytes": total_disk,
-                                         "read_kilobytes": kb_read,
-                                         "write_kilobytes": kb_write
-                                     }
-                                 ]})
-
+                disk_readings.append({"id": str(disk),
+                                      "readings": [
+                                          {
+                                              "reading_at": self.insertTime,
+                                              "usage_bytes": total_disk,
+                                              "read_kilobytes": kb_read,
+                                              "write_kilobytes": kb_write
+                                          }
+                                      ]})
+            except:
+                pass
             info['total_disk'] = []
             info['kb_read'] = []
             info['kb_write'] = []
@@ -178,7 +181,7 @@ class readings(object):
 
         reading_details_json = json.dumps(reading_details, sort_keys=True, indent=4)
 
-        print reading_details_json
+        print(reading_details_json)
 
         try:
             URI = "https://console.6fusion.com:443/api/v2/"
@@ -190,8 +193,8 @@ class readings(object):
                 self.first_run = False
                 return
             if readingPost.status_code != 202:
-                print "There was an error %s in the update of the machine readings at %s " % (readingPost.status_code,
-                                                                                              self.insertTime)
+                print("There was an error " + readingPost.status_code)
+                print("in the update of the machine readings at:" + self.insertTime)
 
             return
 
