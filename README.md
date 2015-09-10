@@ -1,7 +1,5 @@
 # ucxmeter
 
-# meterautomation
-
 How to install the meter: (what does this automation do)
 
 1. To run the meter certain packages must be present.  To accomplish this we do the following:
