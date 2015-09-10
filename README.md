@@ -36,7 +36,7 @@ How to install the meter: (what does this automation do)
 
   example: 
     echo "[infrastructure]
-    id = 594
+    id = 0
     name = 
   
     [machine]
