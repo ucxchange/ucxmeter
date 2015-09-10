@@ -41,6 +41,8 @@ How to install the meter: (what does this automation do)
     id = 0
     config = 0" > /var/ucx_meter/cfg/config.info
 
+    ***NOTE*** the "name" in the config.info file MUST be a infrastructure container name that you would like to contain other machines within.
+
 6. Download and install pyhton 2.7
 - name: prereq python1 - download ez-setup python 2.7
   example: 
