@@ -1,8 +1,9 @@
-/.idea
+
 cfg/config.local
 cfg/oAuth.cfg
 cfg/oAuth.local
-/.project
+.project
+.idea
 infrastructure.pyc
 readings.pyc
 machine.pyc

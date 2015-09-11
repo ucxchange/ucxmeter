@@ -1,0 +1,10 @@
+[infrastructure]
+exchange = Change This
+id = 0
+name = default
+org_id = Change This
+
+[machine]
+id = 0
+config = 0
+

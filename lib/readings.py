@@ -1,17 +1,18 @@
 import json
-from datetime import datetime
 import time
 
+from datetime import datetime
 import requests
 import psutil
 
 headers = {'content-type': 'application/json'}
-oauth_token = "30a62bf3a34104c882eaa47655e99fa6b81ea1fd3428fa5f5e43b74b4b0a7729"
 
 class readings(object):
-    def __init__(self, machine_id=0, org_id=4196, infr_id=0, mach_config=None):
+    def __init__ (self, machine_id=None, org_id=None, infr_id=None, mach_config=None, token=None, auth_server=None):
         self.send_metrics_api_url = "measurements"
         self.first_run = True
+        self.auth_server = auth_server
+        self.token = token
 
         self.machine_id = machine_id
         self.org_id = org_id
@@ -21,6 +22,7 @@ class readings(object):
         self.disk_readings = {}
         self.nic_readings = {}
         self.send_counter = 0
+        self.token_counter = time.time() + 72000
         try:
             temp = mach_config['cpu_count']
             self.mach_config = mach_config
@@ -62,6 +64,10 @@ class readings(object):
                 self.insertTime = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
                 self.send_metrics()
                 self.send_counter = 0
+
+            if self.token_counter < time.time():
+                s = requests.Session()
+                self.token = s.get(self.auth_server, params={'user_id': self.org_id}).text
 
     def get_cpu(self):
         self.cpu_readings.append(psutil.cpu_percent())
@@ -187,7 +193,7 @@ class readings(object):
             URI = "https://console.6fusion.com:443/api/v2/"
             URI += "organizations/%s/infrastructures/%s/machines/%s/readings.json" % (
             self.org_id, self.infr_id, self.machine_id)
-            URI += "?access_token=%s" % oauth_token
+            URI += "?access_token=%s" % self.token
             readingPost = requests.post(URI, data=reading_details_json, headers=headers)
             if self.first_run:
                 self.first_run = False

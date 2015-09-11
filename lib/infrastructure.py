@@ -1,19 +1,20 @@
-import requests
 import json
 
+import requests
+
 headers = {'content-type': 'application/json'}
-oauth_token = "30a62bf3a34104c882eaa47655e99fa6b81ea1fd3428fa5f5e43b74b4b0a7729"
 
 class infrastructure(object):
-    def __init__(self):
-        self.org_id = "4196"
-        self.infr_id = 0
+    def __init__ (self, org_id=None, infr_id=None, token=None):
+        self.token = token
+        self.org_id = org_id
+        self.infr_id = infr_id
 
     def check_infr_exist(self, infr_name):
         try:
             URI = "https://console.6fusion.com:443/api/v2/"
             URI += "organizations/%s/infrastructures.json?" % (self.org_id)
-            URI += "access_token=%s&limit=100&offset=0" % oauth_token
+            URI += "access_token=%s&limit=100&offset=0" % self.token
             req = requests.get(URI)
             reqInfo = json.loads(req.text)
             infrastructures = reqInfo['embedded']['infrastructures']
@@ -43,11 +44,11 @@ class infrastructure(object):
             }
 
         infr_id = self.check_infr_exist(infr_name)
-        if (infr_id==0 or infr_id=="None"):
+        if (infr_id == 0 or infr_id == "None" or not infr_id):
             try:
                 URI = "https://console.6fusion.com:443/api/v2/"
                 URI += "organizations/%s/infrastructures.json?" % (self.org_id)
-                URI += "access_token=%s" % oauth_token
+                URI += "access_token=%s" % self.token
                 infr_data = json.dumps(infr_details, ensure_ascii=True)
                 infrPost = requests.post(URI, data=infr_data, headers=headers)
                 reqInfo = json.loads(infrPost.text)
