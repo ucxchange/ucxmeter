@@ -1,26 +1,10 @@
-# per Delano
-
-# The following are the metrics we use from the exported files:
-# cpu.usage.average
-# mem.consumed.average
-# disk.used.latest
-# disk.read.average
-# disk.write.average
-# net.received.average
-# net.transmitted.average
-#
-# Notes
-# When supplying disk.used.latest, the Instance should be set to DISKFILE
-
-import json
-import os
 import sys
 
 import requests
 
 from lib.readings import readings
-from lib.machine import machine
-from lib.infrastructure import infrastructure
+from lib.machine import Machine
+from lib.infrastructure import Infrastructure
 
 try:
     from ConfigParser import SafeConfigParser
@@ -28,78 +12,95 @@ except:
     from configparser import SafeConfigParser
 
 
-def main ():
-    config_file = 'cfg/config.info'
-    parser = SafeConfigParser()
-    try:
-        parser.read(config_file)
-        cfg_infr_name = parser.get('infrastructure', 'name')
-        cfg_machine_id = parser.get('machine', 'id')
+class Meter(object):
+    def __init__ (self):
+        self.config_file = 'cfg/config.info'
+        self.user = "Rico"
+        self.infrastructure_name = None
+        self.infrastructure_id = None
+        self.infrastructure_exchange = None
+        self.infrastructure_org_id = None
+        self.auth_server = None
+        self.machine_id = None
+        self.machine_config = None
+        self.machine_json = None
+        self.new_machine = None
+        self.token = None
+        self.session = requests.Session()
+
+    def get_config (self):
+        self.parser = SafeConfigParser()
+        self.parser.read(self.config_file)
         try:
-            cfg_org_id = parser.get('infrastructure', 'org_id')
-            cfg_infr_id = parser.get('infrastructure', 'id')
-            cfg_exch_id = parser.get('infrastructure', 'exchange')
-            if cfg_exch_id.lower() == 'ucx':
-                auth_server = 'http://test.ucxchange.com:5001/'
-            elif 'ici' in cfg_exch_id.lower():
-                auth_server = 'http://prod.icixindia.com:5001/'
-            else:
-                print ("you need to change the exchange param to UCX or ICIx & run again")
-                sys.exit()
-            s = requests.Session()
-            token = s.get(auth_server, params={'user_id': cfg_org_id}).text
-        except Exception as e:
-            print ("infrastructure ID is not set, please set this in the config.info")
+            self.infrastructure_org_id = int(self.parser.get('Infrastructure', 'org_id'))
+            i = 1
+        except:
+            print ("please change the org_id to the proper setting")
+            sys.exit()
 
-    except:
-        if not os.path.exists(os.path.dirname(config_file)):
-            os.makedirs(os.path.dirname(config_file))
+        try:
+            self.infrastructure_exchange = self.parser.get('Infrastructure', 'exchange')
+        except:
+            print ("no exchange_if found in the config")
+            sys.exit()
+        if 'ucx' in self.infrastructure_exchange.lower():
+            self.auth_server = 'http://test.ucxchange.com:5001/'
+        elif 'ici' in self.infrastructure_exchange.lower():
+            self.auth_server = 'http://prod.icixindia.com:5001/'
+        else:
+            print ("you need to change the exchange param to UCX or ICIx & run again")
+            sys.exit()
+        self.get_auth_token()
 
-        cfgfile = open("cfg/config.info", 'w')
-        parser.add_section('infrastructure')
-        parser.set('infrastructure', 'id', '0')
-        parser.set('infrastructure', 'name', 'default')
-        parser.set('infrastructure', 'org_id', '0')
-        parser.add_section('machine')
-        parser.set('machine', 'id', '0')
-        parser.set('machine', 'config', '0')
-        parser.write(cfgfile)
-        cfgfile.close()
-        cfg_infr_id = 0
-        cfg_machine_id = 0
-        cfg_org_id = 0
-        cfg_infr_name = 'default'
-        i = 1
-    try:
-        inf = infrastructure(org_id=cfg_org_id, infr_id=cfg_infr_id, token=token)
-    except:
-        print("No token for you exist, verify the config has your org_id, if so call UCX support")
-        sys.exit()
+        try:
+            self.infrastructure_id = self.parser.get('Infrastructure', 'infrastructure_id')
+            self.infrastructure_name = self.parser.get('Infrastructure', 'infrastructure_name')
+        except:
+            i = 1
 
-    if not cfg_infr_id or cfg_machine_id == "0":
-        infr_id = inf.create_infr(cfg_infr_name)
-        parser.set('infrastructure', 'id', str(infr_id))
-        cfgfile = open("cfg/config.info", 'w')
-        parser.write(cfgfile)
-        cfgfile.close()
-    else:
-        infr_id = cfg_infr_id
+        try:
+            self.machine_id = self.parser.get('Machine', 'id')
+            if self.machine_id == "None":
+                self.machine_id = None
+        except:
+            i = 1
 
-    if not cfg_machine_id or cfg_machine_id == "0":
-        node = machine(inf.org_id, infr_id, cfg_infr_name, token)
-        (machine_id, config) = node.create_machine()
-        parser.set('machine', 'id', str(machine_id))
-        parser.set('machine', 'config', config)
-        cfgfile = open("cfg/config.info", 'w')
-        parser.write(cfgfile)
-        cfgfile.close()
-        config_json = config
-    else:
-        machine_id = cfg_machine_id
-        config_json = parser.get('machine', 'config')
+    def add_machine_config (self):
+        file_obj = open(self.config_file, 'w')
 
-    meter = readings(machine_id, inf.org_id, infr_id, json.loads(config_json), token, auth_server)
-    meter.gather_metrics()
+        self.parser.set('Machine', 'id', str(self.machine_id))
+        self.parser.write(file_obj)
+        file_obj.close()
+
+    def get_auth_token (self):
+        self.token = self.session.get(self.auth_server,
+                                      params={'org_id': self.infrastructure_org_id}).text
+
+    def start (self):
+        self.get_config()
+
+        self.infrastructure = Infrastructure(self)
+        infra_exists = self.infrastructure.check_infr_exist()
+        if not infra_exists:
+            self.infrastructure_id = self.infrastructure.create_infrastructure()
+            file_obj = open(self.config_file, 'w')
+            self.parser.set('Infrastructure', 'infrastructure_id', str(self.infrastructure_id))
+            self.parser.write(file_obj)
+            file_obj.close()
+
+        self.machine = Machine(self)
+        self.machine.machine_exist()
+
+        if self.new_machine:
+            self.add_machine_config()
+
+        self.readings = readings(self)
+        self.readings.gather_metrics()
+
+
+def main ():
+    meterObj = Meter()
+    meterObj.start()
 
 
 if __name__ == "__main__":

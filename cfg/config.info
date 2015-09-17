@@ -1,10 +1,8 @@
-[infrastructure]
-exchange = Change This
-id = 0
-name = default
-org_id = Change This
+[Infrastructure]
+exchange = SetTo ICI or UCX
+infrastructure_id = None
+infrastructure_name = ChangeThis
+org_id = ChangeThis
 
-[machine]
-id = 0
-config = 0
-
+[Machine]
+id = None

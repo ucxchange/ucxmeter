@@ -8,113 +8,166 @@ import psutil
 headers = {'content-type': 'application/json'}
 
 class readings(object):
-    def __init__ (self, machine_id=None, org_id=None, infr_id=None, mach_config=None, token=None, auth_server=None):
-        self.send_metrics_api_url = "measurements"
-        self.first_run = True
-        self.auth_server = auth_server
-        self.token = token
+    def __init__ (self, *args):
+        """
 
-        self.machine_id = machine_id
-        self.org_id = org_id
-        self.infr_id = infr_id
+        :param args:
+        :return:
+        """
+
+        self.info = args[0]
+
+        self.token = args[0].token
+        self.infrastructure_name = args[0].infrastructure_name
+        self.infrastructure_org_id = args[0].infrastructure_org_id
+        self.infrastructure_id = args[0].infrastructure_id
+        self.machine_id = args[0].machine_id
+        self.machine_config = args[0].machine.machine_details
+        self.user = args[0].user
+        self.session = args[0].session
+        self.auth_server = args[0].auth_server
+
+        self.send_metrics_api_url = "measurements"
+
+        self.first_run = True
+        self.memory_used = None
+        self.insert_time = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+
         self.cpu_readings = []
         self.memory_readings = []
         self.disk_readings = {}
         self.nic_readings = {}
         self.send_counter = 0
-        self.token_counter = time.time() + 72000
-        try:
-            temp = mach_config['cpu_count']
-            self.mach_config = mach_config
-        except:
-            raise Exception('There is no configuration for this machine available at this time.')
+        self.token_counter = time.time() + 27000
 
     def gather_metrics(self):
+        """
 
+        :return:
+        """
         try:
             disk_counter = psutil.disk_io_counters()
-            current_disk = self.mach_config['disks'][0]
-            self.disk_readings[current_disk['disk_id']] = {'total_disk': [],
-                                                           'kb_read': [],
-                                                           'kb_write': [],
-                                                           'read_count': disk_counter[2],
-                                                           'write_count': disk_counter[3]}
-        except:
+            current_disk = self.machine_config['disks'][0]['remote_id']
+            read_count = disk_counter[2]
+            write_count = disk_counter[3]
+            self.disk_readings[current_disk] = {'total_disk': [],
+                                                'kb_read': [],
+                                                'kb_write': [],
+                                                'read_count': read_count,
+                                                'write_count': write_count}
+        except Exception as e:
             pass
 
         try:
             nic_counter = psutil.net_io_counters()
-            self.nic_readings[self.mach_config['nics'][0]['nic_id']] = {'kb_read': [],
-                                                              'kb_write': [],
-                                                              'transmit_kb': nic_counter[0],
-                                                              'receive_kb': nic_counter[1]}
-        except:
+            if 'nic_id' in self.machine_config['nics'][0].keys():
+                nic_id = self.machine_config['nics'][0]['nic_id']
+            elif 'remote_id' in self.machine_config['nics'][0].keys():
+                nic_id = self.machine_config['nics'][0]['remote_id']
+            else:
+                return
+            self.nic_readings[nic_id] = {'kb_read': [],
+                                         'kb_write': [],
+                                         'transmit_kb': nic_counter[0],
+                                         'receive_kb': nic_counter[1]}
+        except Exception as e:
             pass
 
         while True:
-            self.insertTime = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
-            self.get_disk_reading()
-            self.get_nic_readings()
-            self.cpu_readings.append(psutil.cpu_percent())
-            self.memory_readings.append(psutil.virtual_memory().total - psutil.virtual_memory().available)
-            time.sleep(10)
-            self.send_counter += 1
+            try:
+                self.insert_time = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+                self.get_disk_reading()
+                self.get_nic_readings()
+                self.cpu_readings.append(psutil.cpu_percent())
+                self.memory_readings.append(psutil.virtual_memory().total - psutil.virtual_memory().available)
+                time.sleep(10)
+                self.send_counter += 1
 
-            if self.send_counter > 30:
-                self.insertTime = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
-                self.send_metrics()
-                self.send_counter = 0
+                if self.send_counter > 5:
+                    self.send_counter = 0
+                    self.insert_time = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+                    self.send_metrics()
 
-            if self.token_counter < time.time():
-                s = requests.Session()
-                self.token = s.get(self.auth_server, params={'user_id': self.org_id}).text
+                if self.token_counter < time.time():
+                    self.get_auth_token()
+                    print self.token
+                    self.token = self.info.token
+                    print self.token
+                    self.token_counter = time.time() + 27000
+            except Exception as e:
+                pass
+                print ("a reading failed moving on")
+
+    def get_auth_token (self):
+        self.token = self.session.get(self.auth_server, params={'org_id': self.infrastructure_org_id}).text
 
     def get_cpu(self):
+        """
+
+        :return:
+        """
         self.cpu_readings.append(psutil.cpu_percent())
-        i = 1
         return psutil.cpu_percent()
 
     def get_memory(self):
+        """
+
+        :return:
+        """
         self.memory_readings.append(psutil.virtual_memory().total - psutil.virtual_memory().available)
         self.memory_used = psutil.virtual_memory().total - psutil.virtual_memory().available
-        i = 1
         return self.memory_used
 
     def get_nic_readings(self):
-        nic_counter = psutil.net_io_counters()
-        nic_id = self.mach_config['nics'][0]['nic_id']
+        """
+
+        :return:
+        """
         try:
-            nTemp = self.nic_readings[nic_id]
+            nic_counter = psutil.net_io_counters()
+            if 'nic_id' in self.machine_config['nics'][0].keys():
+                nic_id = self.machine_config['nics'][0]['nic_id']
+            elif 'remote_id' in self.machine_config['nics'][0].keys():
+                nic_id = self.machine_config['nics'][0]['remote_id']
+            else:
+                return
+            nic_temp = self.nic_readings[nic_id]
 
-            nTemp['kb_read'].append(abs(nic_counter[0] - nTemp['transmit_kb']) / 1000)
-            nTemp['kb_write'].append(abs(nic_counter[1] - nTemp['receive_kb']) / 1000)
+            nic_temp['kb_read'].append(abs(nic_counter[0] - nic_temp['transmit_kb']) / 1000)
+            nic_temp['kb_write'].append(abs(nic_counter[1] - nic_temp['receive_kb']) / 1000)
 
-            nTemp['transmit_kb'] = nic_counter[0]
-            nTemp['receive_kb'] = nic_counter[1]
+            nic_temp['transmit_kb'] = nic_counter[0]
+            nic_temp['receive_kb'] = nic_counter[1]
 
-            i = 1
-        except:
+        except Exception as e:
             pass
 
     def get_disk_reading(self):
+        """
 
-        for current_disk in self.mach_config['disks']:
+        :return:
+        """
+
+        for current_disk in self.machine_config['disks']:
             try:
-                dTemp = self.disk_readings[current_disk['disk_id']]
+                disk_temp = self.disk_readings[current_disk['remote_id']]
                 io_counter = psutil.disk_io_counters()
-                dTemp['total_disk'].append(psutil.disk_usage(current_disk['path'])[1])
 
-                dTemp['kb_read'].append(abs(io_counter[2] - dTemp['read_count']) / 1000)
-                dTemp['kb_write'].append(abs(io_counter[3] - dTemp['write_count']) / 1000)
+                disk_temp['total_disk'].append(psutil.disk_usage(current_disk['path'])[1])
 
-                dTemp['read_count'] = io_counter[2]
-                dTemp['write_count'] = io_counter[3]
-            except:
+                disk_temp['kb_read'].append(abs(io_counter[2] - disk_temp['read_count']) / 1000)
+                disk_temp['kb_write'].append(abs(io_counter[3] - disk_temp['write_count']) / 1000)
+
+                disk_temp['read_count'] = io_counter[2]
+                disk_temp['write_count'] = io_counter[3]
+            except Exception as e:
                 pass
 
-            i = 1
-
     def disk_info(self):
+        """
+
+        :return:
+        """
         disk_readings = []
 
         disks = self.disk_readings
@@ -128,23 +181,26 @@ class readings(object):
                 disk_readings.append({"id": str(disk),
                                       "readings": [
                                           {
-                                              "reading_at": self.insertTime,
+                                              "reading_at": self.insert_time,
                                               "usage_bytes": total_disk,
                                               "read_kilobytes": kb_read,
                                               "write_kilobytes": kb_write
                                           }
                                       ]})
-            except:
+            except Exception as e:
+
                 pass
             info['total_disk'] = []
             info['kb_read'] = []
             info['kb_write'] = []
 
-        i = 1
-
         return disk_readings
 
     def nic_info(self):
+        """
+
+        :return:
+        """
         nic_readings = []
 
         nics = self.nic_readings
@@ -156,11 +212,13 @@ class readings(object):
             nic_readings.append({"id": str(nic),
                                  "readings": [
                                      {
-                                         "reading_at": self.insertTime,
+                                         "reading_at": self.insert_time,
                                          "transmit_kilobits": kb_write,
                                          "receive_kilobits": kb_read
                                      }
-                                 ]})
+                                 ]
+                                 }
+                                )
 
             info['kb_read'] = []
             info['kb_write'] = []
@@ -170,11 +228,14 @@ class readings(object):
         return nic_readings
 
     def send_metrics(self):
+        """
+        :return:
+        """
 
         reading_details = {
             "readings": [
                 {
-                    "reading_at": self.insertTime,
+                    "reading_at": self.insert_time,
                     "cpu_usage_percent": int(sum(self.cpu_readings) / len(self.cpu_readings)),
                     "memory_bytes": sum(self.memory_readings) / len(self.memory_readings)
                 }
@@ -190,17 +251,23 @@ class readings(object):
         print(reading_details_json)
 
         try:
-            URI = "https://console.6fusion.com:443/api/v2/"
-            URI += "organizations/%s/infrastructures/%s/machines/%s/readings.json" % (
-            self.org_id, self.infr_id, self.machine_id)
-            URI += "?access_token=%s" % self.token
-            readingPost = requests.post(URI, data=reading_details_json, headers=headers)
+            self.get_auth_token()
+            uri = "https://console.6fusion.com:443/api/v2/"
+            uri += "organizations/%s/infrastructures/%s/machines/%s/readings.json" % (self.infrastructure_org_id,
+                                                                                      self.infrastructure_id,
+                                                                                      self.machine_id)
+            uri += "?access_token=%s" % self.token
+
+            reading_post = requests.post(uri, data=reading_details_json, headers=headers)
             if self.first_run:
                 self.first_run = False
                 return
-            if readingPost.status_code != 202:
-                print("There was an error " + readingPost.status_code)
-                print("in the update of the machine readings at:" + self.insertTime)
+            elif reading_post.status_code != 202:
+                print("There was an error " + str(reading_post.status_code))
+                print("in the update of the Machine readings at:" + self.insert_time)
+
+            else:
+                print("Reading at %s was sent" % self.insert_time)
 
             return
 
