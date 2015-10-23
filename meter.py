@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import sys
 
 import requests
@@ -96,6 +98,16 @@ class Meter(object):
 
         self.readings = readings(self)
         self.readings.gather_metrics()
+
+    def restart(self):
+        import os, platform
+        system = platform.platform()
+
+        if "linux" in system.lower():
+            os.system('python2.7 ' + __file__)
+        else: # "linux" in system.lower():
+            os.system('python ' + __file__)
+
 
 
 def main ():

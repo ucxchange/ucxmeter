@@ -185,7 +185,7 @@ class Machine(object):
 
         except Exception as e:
             print('ERROR: ' + str(e))
-            raise Exception('Infrastructure creation failed.  Halting execution')
+            raise Exception('machine creation failed.  Halting execution')
 
     def get_uuid (self, uri):
         """

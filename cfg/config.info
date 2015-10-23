@@ -1,8 +1,9 @@
 [Infrastructure]
-exchange = SetTo ICI or UCX
-infrastructure_id = None
-infrastructure_name = ChangeThis
-org_id = ChangeThis
+exchange = UCX
+infrastructure_id = 650
+infrastructure_name = singleHop
+org_id = 4196
 
 [Machine]
-id = None
+id = 609031
+

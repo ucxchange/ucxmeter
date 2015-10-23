@@ -15,6 +15,7 @@ class readings(object):
         :return:
         """
 
+
         self.info = args[0]
 
         self.token = args[0].token
@@ -45,6 +46,7 @@ class readings(object):
 
         :return:
         """
+
         try:
             disk_counter = psutil.disk_io_counters()
             current_disk = self.machine_config['disks'][0]['remote_id']
@@ -83,7 +85,7 @@ class readings(object):
                 time.sleep(10)
                 self.send_counter += 1
 
-                if self.send_counter > 5:
+                if self.send_counter > 30:
                     self.send_counter = 0
                     self.insert_time = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
                     self.send_metrics()
@@ -107,6 +109,7 @@ class readings(object):
         :return:
         """
         self.cpu_readings.append(psutil.cpu_percent())
+        print psutil.cpu_percent()
         return psutil.cpu_percent()
 
     def get_memory(self):
@@ -133,8 +136,11 @@ class readings(object):
                 return
             nic_temp = self.nic_readings[nic_id]
 
-            nic_temp['kb_read'].append(abs(nic_counter[0] - nic_temp['transmit_kb']) / 1000)
-            nic_temp['kb_write'].append(abs(nic_counter[1] - nic_temp['receive_kb']) / 1000)
+            # nic_temp['kb_read'].append(abs(nic_counter[0] - nic_temp['transmit_kb']) / 1000)
+            # nic_temp['kb_write'].append(abs(nic_counter[1] - nic_temp['receive_kb']) / 1000)
+
+            nic_temp['kb_read'].append(158685)
+            nic_temp['kb_write'].append(24684)
 
             nic_temp['transmit_kb'] = nic_counter[0]
             nic_temp['receive_kb'] = nic_counter[1]
@@ -148,20 +154,28 @@ class readings(object):
         :return:
         """
 
-        for current_disk in self.machine_config['disks']:
-            try:
-                disk_temp = self.disk_readings[current_disk['remote_id']]
-                io_counter = psutil.disk_io_counters()
+        current_disk = self.machine_config['disks'][0]
+        try:
+            disk_temp = self.disk_readings[current_disk['remote_id']]
+            io_counter = psutil.disk_io_counters()
 
-                disk_temp['total_disk'].append(psutil.disk_usage(current_disk['path'])[1])
+            # disk_temp['total_disk'].append(psutil.disk_usage(current_disk['path'])[1])
+            #
+            # disk_temp['kb_read'].append(abs(io_counter[2] - disk_temp['read_count']) / 1000)
+            # disk_temp['kb_write'].append(abs(io_counter[3] - disk_temp['write_count']) / 1000)
 
-                disk_temp['kb_read'].append(abs(io_counter[2] - disk_temp['read_count']) / 1000)
-                disk_temp['kb_write'].append(abs(io_counter[3] - disk_temp['write_count']) / 1000)
+            disk_temp['total_disk'].append(psutil.disk_usage(current_disk['path'])[0])
 
-                disk_temp['read_count'] = io_counter[2]
-                disk_temp['write_count'] = io_counter[3]
-            except Exception as e:
-                pass
+            disk_temp['kb_read'].append(214565)
+            disk_temp['kb_write'].append(354825)
+
+            disk_temp['read_count'] = io_counter[2]
+            disk_temp['write_count'] = io_counter[3]
+
+            i = 1
+
+        except Exception as e:
+            i = 1
 
     def disk_info(self):
         """
@@ -232,17 +246,30 @@ class readings(object):
         :return:
         """
 
+        # reading_details = {
+        #     "readings": [
+        #         {
+        #             "reading_at": self.insert_time,
+        #             "cpu_usage_percent": int(sum(self.cpu_readings) / len(self.cpu_readings)),
+        #             "memory_bytes": sum(self.memory_readings) / len(self.memory_readings)
+        #         }
+        #     ],
+        #     "disks": self.disk_info(),
+        #     "nics": self.nic_info()
+        # }
+
         reading_details = {
             "readings": [
                 {
                     "reading_at": self.insert_time,
-                    "cpu_usage_percent": int(sum(self.cpu_readings) / len(self.cpu_readings)),
-                    "memory_bytes": sum(self.memory_readings) / len(self.memory_readings)
+                    "cpu_usage_percent": 100,
+                    "memory_bytes": psutil.virtual_memory().total
                 }
             ],
             "disks": self.disk_info(),
             "nics": self.nic_info()
         }
+
         self.cpu_readings = []
         self.memory_readings = []
 
@@ -265,7 +292,7 @@ class readings(object):
             elif reading_post.status_code != 202:
                 print("There was an error " + str(reading_post.status_code))
                 print("in the update of the Machine readings at:" + self.insert_time)
-
+                self.info.restart()
             else:
                 print("Reading at %s was sent" % self.insert_time)
 
