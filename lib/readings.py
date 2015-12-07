@@ -83,7 +83,7 @@ class readings(object):
                 time.sleep(10)
                 self.send_counter += 1
 
-                if self.send_counter > 5:
+                if self.send_counter > 20:
                     self.send_counter = 0
                     self.insert_time = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
                     self.send_metrics()
