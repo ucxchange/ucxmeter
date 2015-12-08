@@ -15,7 +15,7 @@ except:
 class Meter(object):
     def __init__ (self):
         self.config_file = 'cfg/config.info'
-        self.user = "Rico"
+        self.user = "Meter-Test"
         self.infrastructure_name = None
         self.infrastructure_id = None
         self.infrastructure_exchange = None
