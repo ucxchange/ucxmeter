@@ -44,9 +44,9 @@ class Meter(object):
             print ("no exchange_if found in the config")
             sys.exit()
         if 'ucx' in self.infrastructure_exchange.lower():
-            self.auth_server = 'http://prod.ucxchange.com:5001/'
+            self.auth_server = 'http://data01.ucxchange.com:5001/'
         elif 'ici' in self.infrastructure_exchange.lower():
-            self.auth_server = 'http://prod.icixindia.com:5001/'
+            self.auth_server = 'http://data01.icixindia.com:5001/'
         else:
             print ("you need to change the exchange param to UCX or ICIx & run again")
             sys.exit()
