@@ -75,6 +75,7 @@ class Meter(object):
     def get_auth_token (self):
         self.token = self.session.get(self.auth_server,
                                       params={'org_id': self.infrastructure_org_id}).text
+        print self.token
 
     def start (self):
         self.get_config()

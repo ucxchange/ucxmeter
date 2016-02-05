@@ -1,8 +1,9 @@
 [Infrastructure]
-exchange = SetTo ICI or UCX
+exchange = UCX
 infrastructure_id = None
-infrastructure_name = ChangeThis
-org_id = ChangeThis
+infrastructure_name = None
+org_id = None
 
 [Machine]
 id = None
+

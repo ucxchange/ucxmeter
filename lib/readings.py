@@ -38,7 +38,6 @@ class readings(object):
         self.disk_readings = {}
         self.nic_readings = {}
         self.send_counter = 0
-        self.token_counter = time.time() + 27000
 
     def gather_metrics(self):
         """
@@ -81,25 +80,23 @@ class readings(object):
                 self.cpu_readings.append(psutil.cpu_percent())
                 self.memory_readings.append(psutil.virtual_memory().total - psutil.virtual_memory().available)
                 time.sleep(30)
+                # time.sleep(3)
                 self.send_counter += 1
 
                 if self.send_counter > 20:
+                # if self.send_counter > 4:
                     self.send_counter = 0
                     self.insert_time = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
                     self.send_metrics()
-
-                if self.token_counter < time.time():
-                    self.get_auth_token()
-                    print self.token
-                    self.token = self.info.token
-                    print self.token
-                    self.token_counter = time.time() + 27000
             except Exception as e:
                 pass
                 print ("a reading failed moving on")
 
     def get_auth_token (self):
-        self.token = self.session.get(self.auth_server, params={'org_id': self.infrastructure_org_id}).text
+        i = 1
+        self.token = self.session.get(self.auth_server,
+                                      params={'org_id': self.infrastructure_org_id}).text
+        print self.token
 
     def get_cpu(self):
         """
