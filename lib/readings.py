@@ -38,7 +38,6 @@ class readings(object):
         self.disk_readings = {}
         self.nic_readings = {}
         self.send_counter = 0
-        self.token_counter = time.time() + 27000
 
     def gather_metrics(self):
         """
@@ -46,10 +45,11 @@ class readings(object):
         :return:
         """
         try:
-            disk_counter = psutil.disk_io_counters()
+            #HACK Take out disk_counter
+            # disk_counter = psutil.disk_io_counters()
             current_disk = self.machine_config['disks'][0]['remote_id']
-            read_count = disk_counter[2]
-            write_count = disk_counter[3]
+            read_count = 1654
+            write_count = 46542
             self.disk_readings[current_disk] = {'total_disk': [],
                                                 'kb_read': [],
                                                 'kb_write': [],
@@ -81,25 +81,23 @@ class readings(object):
                 self.cpu_readings.append(psutil.cpu_percent())
                 self.memory_readings.append(psutil.virtual_memory().total - psutil.virtual_memory().available)
                 time.sleep(30)
+                # time.sleep(3)
                 self.send_counter += 1
 
                 if self.send_counter > 20:
+                # if self.send_counter > 4:
                     self.send_counter = 0
                     self.insert_time = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
                     self.send_metrics()
-
-                if self.token_counter < time.time():
-                    self.get_auth_token()
-                    print self.token
-                    self.token = self.info.token
-                    print self.token
-                    self.token_counter = time.time() + 27000
             except Exception as e:
                 pass
                 print ("a reading failed moving on")
 
     def get_auth_token (self):
-        self.token = self.session.get(self.auth_server, params={'org_id': self.infrastructure_org_id}).text
+        i = 1
+        self.token = self.session.get(self.auth_server,
+                                      params={'org_id': self.infrastructure_org_id}).text
+        print self.token
 
     def get_cpu(self):
         """
@@ -124,6 +122,7 @@ class readings(object):
         :return:
         """
         try:
+
             nic_counter = psutil.net_io_counters()
             if 'nic_id' in self.machine_config['nics'][0].keys():
                 nic_id = self.machine_config['nics'][0]['nic_id']
@@ -150,16 +149,23 @@ class readings(object):
 
         for current_disk in self.machine_config['disks']:
             try:
+                #HACK: change io_counters to fake number & comment out the io_counter
                 disk_temp = self.disk_readings[current_disk['remote_id']]
-                io_counter = psutil.disk_io_counters()
+                # io_counter = psutil.disk_io_counters()
 
                 disk_temp['total_disk'].append(psutil.disk_usage(current_disk['path'])[1])
 
-                disk_temp['kb_read'].append(abs(io_counter[2] - disk_temp['read_count']) / 1000)
-                disk_temp['kb_write'].append(abs(io_counter[3] - disk_temp['write_count']) / 1000)
+                # disk_temp['kb_read'].append(abs(io_counter[2] - disk_temp['read_count']) / 1000)
+                # disk_temp['kb_write'].append(abs(io_counter[3] - disk_temp['write_count']) / 1000)
+                #
+                # disk_temp['read_count'] = io_counter[2]
+                # disk_temp['write_count'] = io_counter[3]
 
-                disk_temp['read_count'] = io_counter[2]
-                disk_temp['write_count'] = io_counter[3]
+                disk_temp['kb_read'].append(abs(354365 - disk_temp['read_count']) / 1000)
+                disk_temp['kb_write'].append(abs(65421 - disk_temp['write_count']) / 1000)
+
+                disk_temp['read_count'] = 65432
+                disk_temp['write_count'] = 87981
             except Exception as e:
                 pass
 
