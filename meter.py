@@ -22,6 +22,8 @@ class Meter(object):
         self.infrastructure_org_id = None
         self.auth_server = None
         self.machine_id = None
+        self.ucx_machine_id = None
+        self.ucx_machine_uuid = None
         self.machine_config = None
         self.machine_json = None
         self.new_machine = None
@@ -32,19 +34,26 @@ class Meter(object):
         self.parser = SafeConfigParser()
         self.parser.read(self.config_file)
         try:
-            self.infrastructure_org_id = int(self.parser.get('Infrastructure', 'org_id'))
+            self.infrastructure_org_id = int(self.parser.get('Infrastructure-6fusion', 'org_id'))
             i = 1
         except:
             print ("please change the org_id to the proper setting")
             sys.exit()
 
         try:
-            self.infrastructure_exchange = self.parser.get('Infrastructure', 'exchange')
+            self.trade_id = int(self.parser.get('Infrastructure-UCX', 'tradeId'))
+            i = 1
+        except:
+            print ("please change the trade_id to the proper setting")
+            sys.exit()
+
+        try:
+            self.infrastructure_exchange = self.parser.get('Infrastructure-6fusion', 'exchange')
         except:
             print ("no exchange_if found in the config")
             sys.exit()
         if 'ucx' in self.infrastructure_exchange.lower():
-            self.auth_server = 'http://data01.ucxchange.com:5001/'
+            self.auth_server = 'http://data-dev.ucxchange.com:5001/'
         elif 'ici' in self.infrastructure_exchange.lower():
             self.auth_server = 'http://data01.icixindia.com:5001/'
         else:
@@ -53,13 +62,13 @@ class Meter(object):
         self.get_auth_token()
 
         try:
-            self.infrastructure_id = self.parser.get('Infrastructure', 'infrastructure_id')
-            self.infrastructure_name = self.parser.get('Infrastructure', 'infrastructure_name')
+            self.infrastructure_id = self.parser.get('Infrastructure-6fusion', 'infrastructure_id')
+            self.infrastructure_name = self.parser.get('Infrastructure-6fusion', 'infrastructure_name')
         except:
             i = 1
 
         try:
-            self.machine_id = self.parser.get('Machine', 'id')
+            self.machine_id = self.parser.get('Machine-6fusion', 'id')
             if self.machine_id == "None":
                 self.machine_id = None
         except:
@@ -68,23 +77,27 @@ class Meter(object):
     def add_machine_config (self):
         file_obj = open(self.config_file, 'w')
 
-        self.parser.set('Machine', 'id', str(self.machine_id))
+        self.parser.set('Machine-6fusion', 'id', str(self.machine_id))
+        self.parser.set('Machine-UCX', 'id', str(self.ucx_machine_id))
+        self.parser.set('Machine-UCX', 'uuid', str(self.ucx_machine_uuid))
         self.parser.write(file_obj)
         file_obj.close()
 
     def get_auth_token (self):
         self.token = self.session.get(self.auth_server,
                                       params={'org_id': self.infrastructure_org_id}).text
+        # print self.token
 
     def start (self):
         self.get_config()
 
         self.infrastructure = Infrastructure(self)
         infra_exists = self.infrastructure.check_infr_exist()
+
         if not infra_exists:
             self.infrastructure_id = self.infrastructure.create_infrastructure()
             file_obj = open(self.config_file, 'w')
-            self.parser.set('Infrastructure', 'infrastructure_id', str(self.infrastructure_id))
+            self.parser.set('Infrastructure-6fusion', 'infrastructure_id', str(self.infrastructure_id))
             self.parser.write(file_obj)
             file_obj.close()
 

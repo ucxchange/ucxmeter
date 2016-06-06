@@ -24,6 +24,10 @@ class Machine(object):
 
         self.info = args[0]
 
+        self.trade_id = self.info.trade_id
+        self.ucx_machine_id = self.info.ucx_machine_id
+        self.ucx_machine_uuid = self.info.ucx_machine_uuid
+
         self.token = args[0].token
         self.infrastructure_name = args[0].infrastructure_name
         self.infrastructure_org_id = args[0].infrastructure_org_id
@@ -40,6 +44,9 @@ class Machine(object):
         self.nics = []
 
         self.total_memory = None
+
+        self.header = {'Content-type': 'application/json'}
+        self.querystring = {"echo": "true"}
 
     def machine_exist (self):
         """
@@ -74,6 +81,7 @@ class Machine(object):
         else:
             self.info.new_machine = True
             self.create_machine()
+            self.create_machine_ucx()
             return False
 
     def get_mem(self):
@@ -133,7 +141,7 @@ class Machine(object):
         :return:
         """
 
-        print ("Machine not found, creating Machine")
+        print ("Machine not found for 6fusion, creating Machine")
 
         self.get_cpu_info()
         self.get_mem()
@@ -230,6 +238,41 @@ class Machine(object):
             print("Nic info get failed")
 
         self.json_details = json.dumps(self.machine_details, sort_keys=True, indent=4)
+
+    def create_machine_ucx(self):
+
+        print ("Machine not found for UCX, creating Machine")
+
+        name = socket.gethostname() # + '_' + datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
+
+        cur_time = datetime.now().strftime('%d/%m/%Y')
+
+        URL = "http://console-dev.ucxchange.com/uconsole/machines/save/%s" % self.trade_id
+
+        data = {
+            "comments": "This is a test",
+            "data": [
+                {
+                    "machineId": 0,
+                    "name": name + '1',
+                    "assignedAt": cur_time,
+                    "lastUpdate": cur_time
+                }
+            ]
+        }
+        json_data = json.dumps(data)
+
+        response = requests.request("POST",
+                                    URL,
+                                    data=json_data,
+                                    headers=self.header)
+        i = 1
+        req_data = json.loads(response.text)['data'][0]
+
+
+        self.info.ucx_machine_id = req_data['machineId']
+        self.info.ucx_machine_uuid = req_data['uuid']
+        self.info.ucx_machine_config = req_data
 
     def remove_machine(self, machine_id=None, org_id=None, infra=None, exch=None):
         """

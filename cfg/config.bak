@@ -1,3 +1,14 @@
+[Infrastructure]
+exchange = UCX
+infrastructure_id = 790
+infrastructure_name = UCXTemp
+org_id = 4196
+
+[Machine]
+id = 855210
+
+
+
 [Infrastructure-6fusion]
 exchange = UCX
 infrastructure_id = 790
@@ -5,12 +16,11 @@ infrastructure_name = UCXTemp
 org_id = 4196
 
 [Machine-6fusion]
-id = 864951
+id = None
 
 [Infrastructure-UCX]
 tradeid = 10004
 
 [Machine-UCX]
-id = 10030
-uuid = bab40806-8563-49cd-85dc-76fdb1d81815
-
+id = None
+uuid = None

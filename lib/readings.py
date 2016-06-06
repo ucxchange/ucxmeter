@@ -4,6 +4,8 @@ import time
 from datetime import datetime
 import requests
 import psutil
+from cpuinfo import cpuinfo
+from netifaces import interfaces, ifaddresses, AF_INET
 
 headers = {'content-type': 'application/json'}
 
@@ -17,6 +19,11 @@ class readings(object):
 
         self.info = args[0]
 
+        self.machine_id = self.info.machine_id
+        self.ucx_machine_uuid = self.info.ucx_machine_uuid
+        self.session = self.info.session
+        self.post_url = "http://console-dev.ucxchange.com/uconsole/metrics/save/%s" % self.ucx_machine_uuid
+
         self.token = args[0].token
         self.infrastructure_name = args[0].infrastructure_name
         self.infrastructure_org_id = args[0].infrastructure_org_id
@@ -24,7 +31,6 @@ class readings(object):
         self.machine_id = args[0].machine_id
         self.machine_config = args[0].machine.machine_details
         self.user = args[0].user
-        self.session = args[0].session
         self.auth_server = args[0].auth_server
 
         self.send_metrics_api_url = "measurements"
@@ -38,7 +44,10 @@ class readings(object):
         self.disk_readings = {}
         self.nic_readings = {}
         self.send_counter = 0
-        self.token_counter = time.time() + 27000
+
+        self.get_cpu_info()
+        self.setup_disks()
+        self.setup_nics()
 
     def gather_metrics(self):
         """
@@ -80,23 +89,54 @@ class readings(object):
                 self.get_nic_readings()
                 self.cpu_readings.append(psutil.cpu_percent())
                 self.memory_readings.append(psutil.virtual_memory().total - psutil.virtual_memory().available)
-                time.sleep(30)
+                # time.sleep(30)
+                time.sleep(3)
                 self.send_counter += 1
 
-                if self.send_counter > 20:
+                #
+                if self.send_counter > 5:
                     self.send_counter = 0
                     self.insert_time = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
                     self.send_metrics()
 
-                if self.token_counter < time.time():
-                    self.get_auth_token()
-                    print self.token
-                    self.token = self.info.token
-                    print self.token
-                    self.token_counter = time.time() + 27000
             except Exception as e:
                 pass
                 print ("a reading failed moving on")
+
+    def get_cpu_info(self):
+        cpu_count = cpuinfo.get_cpu_info()['count']
+        self.cpu_speed = cpuinfo.get_cpu_info()['hz_actual_raw'][0] / 1000000.0 * cpu_count
+        i = 1
+
+    def setup_disks(self):
+        self.disks = []
+        disks = psutil.disk_partitions()
+        for disk in disks:
+            if not disk.fstype:
+                continue
+            else:
+                total_disk_size = psutil.disk_usage(disk[1])[0]
+                self.disks.append({"name": disk[0],
+                                   "path": disk[1],
+                                   "maximum_size_bytes": total_disk_size,
+                                   "type": "DISK"})
+
+        i = 1
+
+    def setup_nics(self):
+        self.nics = []
+        for interface in interfaces():
+            try:
+                for link in ifaddresses(interface)[AF_INET]:
+                    if '127.0.0.1' == link['addr']:
+                        continue
+                    self.nics.append({"name": interface,
+                                      "link": link['addr'],
+                                      "kind": 0,
+                                      "mac_address": "aa:aa:aa:aa:aa:aa"})
+            except Exception as e:
+                pass
+        i = 1
 
     def get_auth_token (self):
         self.token = self.session.get(self.auth_server, params={'org_id': self.infrastructure_org_id}).text
@@ -232,6 +272,26 @@ class readings(object):
         :return:
         """
 
+        disk_info = self.disk_info()
+        disk_read = disk_info[0]['readings'][0]['read_kilobytes']
+        disk_write = disk_info[0]['readings'][0]['write_kilobytes']
+        disk_usage = disk_info[0]['readings'][0]['usage_bytes'] * 9.31322574615E-10
+
+        disk_io = disk_read + disk_write
+
+        nic_info = self.nic_info()
+        nic_read = nic_info[0]['readings'][0]['receive_kilobits']
+        nic_write = nic_info[0]['readings'][0]['transmit_kilobits']
+        nic_io = nic_read + nic_write
+
+        cpu_info = int(sum(self.cpu_readings) / len(self.cpu_readings))
+        cpu_reading_mhz = psutil.cpu_percent() / 100 * self.cpu_speed
+
+        mem_info = sum(self.memory_readings) / len(self.memory_readings)
+        mem_mb = mem_info / (1024 * 1024)
+
+
+
         reading_details = {
             "readings": [
                 {
@@ -240,8 +300,10 @@ class readings(object):
                     "memory_bytes": sum(self.memory_readings) / len(self.memory_readings)
                 }
             ],
-            "disks": self.disk_info(),
-            "nics": self.nic_info()
+            # "disks": self.disk_info(),
+            # "nics": self.nic_info()
+            "disks": disk_info,
+            "nics": nic_info
         }
         self.cpu_readings = []
         self.memory_readings = []
@@ -258,16 +320,17 @@ class readings(object):
                                                                                       self.machine_id)
             uri += "?access_token=%s" % self.token
 
-            reading_post = requests.post(uri, data=reading_details_json, headers=headers)
-            if self.first_run:
-                self.first_run = False
-                return
-            elif reading_post.status_code != 202:
-                print("There was an error " + str(reading_post.status_code))
-                print("in the update of the Machine readings at:" + self.insert_time)
-
-            else:
-                print("Reading at %s was sent" % self.insert_time)
+            # reading_post = requests.post(uri, data=reading_details_json, headers=headers)
+            #
+            # if self.first_run:
+            #     self.first_run = False
+            #     return
+            # elif reading_post.status_code != 202:
+            #     print("There was an error " + str(reading_post.status_code))
+            #     print("in the update of the Machine readings at:" + self.insert_time)
+            #
+            # else:
+            #     print("Reading at %s was sent" % self.insert_time)
 
             return
 
