@@ -37,7 +37,10 @@ class readings(object):
 
         self.first_run = True
         self.memory_used = None
-        self.insert_time = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+        log_header = """cpu_percent, cpu_reading_mhz, mem_bytes, mem_mb, disk_bits, \
+disk_usage_gb, disk_read, disk_write, disk_io, nic_read, nic_write, nic_io
+        """
+        print log_header
 
         self.cpu_readings = []
         self.memory_readings = []
@@ -84,19 +87,19 @@ class readings(object):
 
         while True:
             try:
-                self.insert_time = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+                # self.insert_time = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
                 self.get_disk_reading()
                 self.get_nic_readings()
-                self.cpu_readings.append(psutil.cpu_percent())
+                self.cpu_readings.append(self.get_cpu())
                 self.memory_readings.append(psutil.virtual_memory().total - psutil.virtual_memory().available)
-                # time.sleep(30)
-                time.sleep(3)
+                time.sleep(30)
+                # time.sleep(3)
                 self.send_counter += 1
 
-                #
                 if self.send_counter > 5:
                     self.send_counter = 0
-                    self.insert_time = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+                    self.insert_time = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:00Z')
+                    self.ucx_insert_time = datetime.utcnow().strftime('%Y-%m-%d %H:%M:00')
                     self.send_metrics()
 
             except Exception as e:
@@ -146,7 +149,7 @@ class readings(object):
 
         :return:
         """
-        self.cpu_readings.append(psutil.cpu_percent())
+        # self.cpu_readings.append(psutil.cpu_percent())
         return psutil.cpu_percent()
 
     def get_memory(self):
@@ -173,8 +176,8 @@ class readings(object):
                 return
             nic_temp = self.nic_readings[nic_id]
 
-            nic_temp['kb_read'].append(abs(nic_counter[0] - nic_temp['transmit_kb']) / 1000)
-            nic_temp['kb_write'].append(abs(nic_counter[1] - nic_temp['receive_kb']) / 1000)
+            nic_temp['kb_read'].append(abs(nic_counter[0] - nic_temp['transmit_kb']) / 1024)
+            nic_temp['kb_write'].append(abs(nic_counter[1] - nic_temp['receive_kb']) / 1024)
 
             nic_temp['transmit_kb'] = nic_counter[0]
             nic_temp['receive_kb'] = nic_counter[1]
@@ -195,11 +198,12 @@ class readings(object):
 
                 disk_temp['total_disk'].append(psutil.disk_usage(current_disk['path'])[1])
 
-                disk_temp['kb_read'].append(abs(io_counter[2] - disk_temp['read_count']) / 1000)
-                disk_temp['kb_write'].append(abs(io_counter[3] - disk_temp['write_count']) / 1000)
+                disk_temp['kb_read'].append(abs(io_counter[2] - disk_temp['read_count']) / 1024)
+                disk_temp['kb_write'].append(abs(io_counter[3] - disk_temp['write_count']) / 1024)
 
                 disk_temp['read_count'] = io_counter[2]
                 disk_temp['write_count'] = io_counter[3]
+
             except Exception as e:
                 pass
 
@@ -275,7 +279,8 @@ class readings(object):
         disk_info = self.disk_info()
         disk_read = disk_info[0]['readings'][0]['read_kilobytes']
         disk_write = disk_info[0]['readings'][0]['write_kilobytes']
-        disk_usage = disk_info[0]['readings'][0]['usage_bytes'] * 9.31322574615E-10
+        disk_usage = disk_info[0]['readings'][0]['usage_bytes']
+        disk_usage_gb = int(disk_info[0]['readings'][0]['usage_bytes'] * 9.31322574615E-10)
 
         disk_io = disk_read + disk_write
 
@@ -285,34 +290,67 @@ class readings(object):
         nic_io = nic_read + nic_write
 
         cpu_info = int(sum(self.cpu_readings) / len(self.cpu_readings))
-        cpu_reading_mhz = psutil.cpu_percent() / 100 * self.cpu_speed
+        cpu_reading_mhz = int(cpu_info * self.cpu_speed) / 100
 
         mem_info = sum(self.memory_readings) / len(self.memory_readings)
         mem_mb = mem_info / (1024 * 1024)
 
-
-
-        reading_details = {
-            "readings": [
-                {
-                    "reading_at": self.insert_time,
-                    "cpu_usage_percent": int(sum(self.cpu_readings) / len(self.cpu_readings)),
-                    "memory_bytes": sum(self.memory_readings) / len(self.memory_readings)
-                }
-            ],
-            # "disks": self.disk_info(),
-            # "nics": self.nic_info()
-            "disks": disk_info,
-            "nics": nic_info
-        }
         self.cpu_readings = []
         self.memory_readings = []
 
-        reading_details_json = json.dumps(reading_details, sort_keys=True, indent=4)
-
-        print(reading_details_json)
+        log_info = "%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s" % \
+                   (cpu_info, cpu_reading_mhz, mem_info, mem_mb,
+                    disk_usage, disk_usage_gb, disk_read, disk_write, disk_io,
+                    nic_read, nic_write, nic_io)
+        print log_info
 
         try:
+            ucx_reading = {
+            "comments": '',
+            "data": [
+                {
+                    "uuid": self.ucx_machine_uuid,
+                    "readingTime": self.ucx_insert_time,
+                    "cpuMhz": int(cpu_reading_mhz),
+                    "memoryMegabytes": mem_mb,
+                    "diskIOKilobytes": disk_io,
+                    "lanKilobits": nic_io,
+                    "wanKilobits": 0,
+                    "storageGigabytes": int(disk_usage_gb)
+                }
+            ]
+            }
+
+            ucx_reading_json = json.dumps(ucx_reading, sort_keys=True, indent=4)
+
+            ucx_response = requests.request("POST",
+                                    self.post_url,
+                                    data=ucx_reading_json,
+                                    headers=headers)
+
+            if ucx_response.status_code == 200:
+                print("UCX Reading at %s was sent" % self.insert_time)
+
+        except:
+            print "UCX POST failed"
+
+        try:
+            six_fusion_reading = {
+                "readings": [
+                    {
+                        "reading_at": self.insert_time,
+                        "cpu_usage_percent": int(cpu_info),
+                        "memory_bytes": mem_info
+                    }
+                ],
+                "disks": disk_info,
+                "nics": nic_info
+            }
+
+            six_fusion_reading_json = json.dumps(six_fusion_reading, sort_keys=True, indent=4)
+
+            # print(reading_details_json)
+
             self.get_auth_token()
             uri = "https://console.6fusion.com:443/api/v2/"
             uri += "organizations/%s/infrastructures/%s/machines/%s/readings.json" % (self.infrastructure_org_id,
@@ -320,17 +358,20 @@ class readings(object):
                                                                                       self.machine_id)
             uri += "?access_token=%s" % self.token
 
-            # reading_post = requests.post(uri, data=reading_details_json, headers=headers)
-            #
-            # if self.first_run:
-            #     self.first_run = False
-            #     return
-            # elif reading_post.status_code != 202:
-            #     print("There was an error " + str(reading_post.status_code))
-            #     print("in the update of the Machine readings at:" + self.insert_time)
-            #
-            # else:
-            #     print("Reading at %s was sent" % self.insert_time)
+            reading_post = requests.post(uri,
+                                         data=six_fusion_reading_json,
+                                         headers=headers)
+
+            if self.first_run:
+                self.first_run = False
+                return
+
+            elif reading_post.status_code != 202:
+                print("There was an error " + str(reading_post.status_code))
+                print("in the update of the Machine readings at:" + self.insert_time)
+
+            else:
+                print("6fusion reading at %s was sent" % self.insert_time)
 
             return
 
