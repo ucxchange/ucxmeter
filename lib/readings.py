@@ -6,8 +6,12 @@ import requests
 import psutil
 from cpuinfo import cpuinfo
 from netifaces import interfaces, ifaddresses, AF_INET
+from logFramework import Logger, getCurrentTime
 
 headers = {'content-type': 'application/json'}
+
+logFile = "logs/meter_%s.log" % getCurrentTime()
+logger = Logger(appName='meter', logFile=logFile)
 
 class readings(object):
     def __init__ (self, *args):
@@ -37,10 +41,10 @@ class readings(object):
 
         self.first_run = True
         self.memory_used = None
-        log_header = """cpu_percent, cpu_reading_mhz, mem_bytes, mem_mb, disk_bits, \
-disk_usage_gb, disk_read, disk_write, disk_io, nic_read, nic_write, nic_io
-        """
+        log_header = """timeStamp, cpu_percent, cpu_reading_mhz, mem_bytes, mem_mb, disk_bits, \
+disk_usage_gb, disk_read, disk_write, disk_io, nic_read, nic_write, nic_io"""
         print log_header
+        logger.log_header(log_header)
 
         self.cpu_readings = []
         self.memory_readings = []
@@ -96,7 +100,7 @@ disk_usage_gb, disk_read, disk_write, disk_io, nic_read, nic_write, nic_io
                 # time.sleep(3)
                 self.send_counter += 1
 
-                if self.send_counter > 5:
+                if self.send_counter > 10:
                     self.send_counter = 0
                     self.insert_time = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:00Z')
                     self.ucx_insert_time = datetime.utcnow().strftime('%Y-%m-%d %H:%M:00')
@@ -303,6 +307,7 @@ disk_usage_gb, disk_read, disk_write, disk_io, nic_read, nic_write, nic_io
                     disk_usage, disk_usage_gb, disk_read, disk_write, disk_io,
                     nic_read, nic_write, nic_io)
         print log_info
+        logger.log(log_info)
 
         try:
             ucx_reading = {

@@ -3,6 +3,7 @@ cfg/config.local
 cfg/oAuth.cfg
 cfg/oAuth.local
 .project
+logs/*.log
 .idea
 infrastructure.pyc
 readings.pyc
